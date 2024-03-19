@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" standalone="no" ?>
+<modDesc descVersion="79">
+    <author>Farmsim Tim (timmeey86)</author>
+    <version>0.0.0.1</version>
+    <title>
+        <en>Stay on Trailer</en>
+        <de>Auf Anhängern mitfahren</de>
+    </title>
+    
+    <description>
+        <en><![CDATA[TODO]]></en>
+        <de><![CDATA[TODO]]></de>
+    </description>
+    
+    <multiplayer supported="true" />
+
+    <iconFilename>icon_StayOnTrailer.dds</iconFilename>
+
+    <extraSourceFiles>
+        <sourceFile filename="scripts/StayOnTrailer.lua" />
+    </extraSourceFiles>
+
+    <l10n>
+    </l10n>
+</modDesc>
