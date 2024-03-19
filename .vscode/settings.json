@@ -1,0 +1,14 @@
+{
+    "Lua.diagnostics.globals": [
+        "Mission00",
+        "Utils",
+        "g_currentModDirectory",
+        "g_currentModName",
+        "Player",
+        "CollisionMask",
+        "raycastClosest",
+        "g_currentMission",
+        "Vehicle",
+        "Class"
+    ]
+}
