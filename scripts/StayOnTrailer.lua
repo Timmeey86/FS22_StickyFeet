@@ -17,5 +17,5 @@ Mission00.loadMission00Finished = Utils.appendedFunction(Mission00.loadMission00
 
     Player.registerActionEvents = Utils.appendedFunction(Player.registerActionEvents, function(...) vehicleTracker:registerActionEvents() end)
     Player.updateActionEvents = Utils.appendedFunction(Player.updateActionEvents, function(...) vehicleTracker:updateActionEvents() end)
-    Player.updateTick = Utils.appendedFunction(Player.updateTick, function(player, ...) vehicleTracker:updateTick(player) end)
+    Player.updateTick = Utils.overwrittenFunction(Player.updateTick, function(player, superFunc, ...) vehicleTracker:updateTick(player, superFunc, ...) end)
 end)

@@ -83,9 +83,25 @@ function VehicleTracker:updateActionEvents()
 end
 
 ---Updates the player position while the vehicle is moving and the player is locked
-function VehicleTracker:updateTick(player)
+function VehicleTracker:updateTick(player, superFunc, ...)
     -- TODO: Detect vehicle deletion before accessing localToWorld
+    local positionShallBeAdjusted = false
     if self.playerIsLocked then
+        if player.inputInformation.moveForward ~= 0 or player.inputInformation.moveRight ~= 0 then
+            -- player is moving, don't lock in place
+
+            -- translate the new player position to the coordinate system of the locked vehicle and remember it
+            local playerX, playerY, playerZ = localToWorld(player.rootNode, 0, 0, 0)
+            self.lockedVehicleLocalCoords.x, self.lockedVehicleLocalCoords.y, self.lockedVehicleLocalCoords.z = worldToLocal(self.lockedVehicleId, playerX, playerY - player.model.capsuleTotalHeight / 2.0, playerZ)
+        else
+            positionShallBeAdjusted = true
+        end
+    end
+    superFunc(player, ...)
+
+    if positionShallBeAdjusted then
+        -- player is stationary, keep player at the same spot relative to the trailer
+
         -- Find the world coordinates of the snapshotted local vehicle coordinates
         local worldX, worldY, worldZ = localToWorld(self.lockedVehicleId, self.lockedVehicleLocalCoords.x, self.lockedVehicleLocalCoords.y, self.lockedVehicleLocalCoords.z)
         -- Force move the player to these coordinates
