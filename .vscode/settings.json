@@ -9,6 +9,13 @@
         "raycastClosest",
         "g_currentMission",
         "Vehicle",
-        "Class"
+        "Class",
+        "localToWorld",
+        "getTranslation",
+        "worldToLocal",
+        "setTranslation",
+        "g_inputBinding",
+        "GS_PRIO_HIGH",
+        "g_i18n"
     ]
 }
