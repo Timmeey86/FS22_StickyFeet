@@ -16,6 +16,7 @@
         "setTranslation",
         "g_inputBinding",
         "GS_PRIO_HIGH",
-        "g_i18n"
+        "g_i18n",
+        "DebugUtil"
     ]
 }
