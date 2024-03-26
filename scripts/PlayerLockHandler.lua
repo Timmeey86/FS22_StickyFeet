@@ -18,7 +18,7 @@ function PlayerLockHandler.new(playerMovementTracker, vehicleMovementTracker, pl
     return self
 end
 
-function PlayerLockHandler:after_player_updateTick(player)
+function PlayerLockHandler:before_player_updateTick(player)
     local playerToVehicleData = self.playerVehicleTracker.playerToVehicleData[player]
     if playerToVehicleData == nil then return end
 
@@ -68,5 +68,12 @@ function PlayerLockHandler:after_player_updateTick(player)
     else
         self.playerLockStates[player].isLocked = false
         -- Add the vehicle direction to the player movement data
+        local directionVector = vehicleMovementData.directionVector
+        if directionVector ~= nil then
+            if directionVector.x ~= 0 or directionVector.y ~= 0 or directionVector.z ~= 0 then
+                local x,y,z = localToWorld(player.rootNode, 0, 0, 0)
+                setTranslation(player.rootNode, x + directionVector.x, y + directionVector.y, z + directionVector.z)
+            end
+        end
     end
 end
