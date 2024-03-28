@@ -20,6 +20,7 @@ function PlayerLockHandler.new(playerMovementTracker, vehicleMovementTracker, pl
 end
 
 function PlayerLockHandler:before_player_updateTick(player)
+    self.desiredPlayerLocations[player] = nil
     if not player.isClient or player ~= g_currentMission.player then return end
 
     local playerToVehicleData = self.playerVehicleTracker.playerToVehicleData[player]
@@ -96,22 +97,17 @@ function PlayerLockHandler:after_player_writeUpdateStream(player, streamId, conn
     streamWriteBool(streamId, desiredLocationShallBeSent)
 
     if desiredLocationShallBeSent then
-        print(("%s: Asking server to move player to %.3f, %.3f, %.3f"):format(MOD_NAME, desiredPlayerLocation.x, desiredPlayerLocation.y, desiredPlayerLocation.z))
         streamWriteFloat32(streamId, desiredPlayerLocation.x)
         streamWriteFloat32(streamId, desiredPlayerLocation.y)
         streamWriteFloat32(streamId, desiredPlayerLocation.z)
-        -- Reset the desired location so it doesn't get sent endlessly
-        self.desiredPlayerLocations[player] = nil
     end
 end
 
 function PlayerLockHandler:after_player_readUpdateStream(player, streamId, timestamp, connection)
     local desiredLocationWasSent = streamReadBool(streamId)
-
-    if desiredLocationWasSent then
+    if player.isServer and desiredLocationWasSent then
         -- This should only ever happen on the server since the flag will be false in all other cases
         local x, y, z = streamReadFloat32(streamId), streamReadFloat32(streamId), streamReadFloat32(streamId)
-        print(("%s: Client wants to move player to %.3f, %.3f, %.3f"):format(MOD_NAME, x, y, z))
         setTranslation(player.rootNode, x, y, z)
     end
 end

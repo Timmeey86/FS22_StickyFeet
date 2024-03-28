@@ -20,7 +20,6 @@
         <sourceFile filename="scripts/PlayerVehicleTracker.lua" />
         <sourceFile filename="scripts/PlayerMovementTracker.lua" />
         <sourceFile filename="scripts/VehicleMovementTracker.lua" />
-        <sourceFile filename="scripts/PlayerLockMoveEvent.lua" />
         <sourceFile filename="scripts/PlayerLockHandler.lua" />
         <sourceFile filename="scripts/StayOnTrailer.lua" />
     </extraSourceFiles>
