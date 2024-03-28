@@ -17,6 +17,14 @@
         "g_inputBinding",
         "GS_PRIO_HIGH",
         "g_i18n",
-        "DebugUtil"
+        "DebugUtil",
+        "Event",
+        "InitEventClass",
+        "streamWriteFloat32",
+        "streamReadFloat32",
+        "g_client",
+        "NetworkUtil",
+        "streamWriteBool",
+        "streamReadBool"
     ]
 }

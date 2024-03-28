@@ -23,4 +23,11 @@ Mission00.loadMission00Finished = Utils.appendedFunction(Mission00.loadMission00
     Vehicle.updateTick = Utils.appendedFunction(Vehicle.updateTick, function(vehicle, ...)
         vehicleMovementTracker:after_vehicle_updateTick(vehicle)
     end)
+
+    Player.writeUpdateStream = Utils.appendedFunction(Player.writeUpdateStream, function(player, streamId, connection, dirtyMask)
+        playerLockHandler:after_player_writeUpdateStream(player, streamId, connection, dirtyMask)
+    end)
+    Player.readUpdateStream = Utils.appendedFunction(Player.readUpdateStream, function(player, streamId, timestamp, connection)
+        playerLockHandler:after_player_readUpdateStream(player, streamId, timestamp, connection)
+    end)
 end)

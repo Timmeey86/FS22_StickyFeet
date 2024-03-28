@@ -17,10 +17,11 @@ end
 ---Keeps track of the location and direction of any vehicle which has a player above it
 ---@param vehicle table @The vehicle to be potentially tracked
 function VehicleMovementTracker:after_vehicle_updateTick(vehicle)
+    if not vehicle.isClient then return end
+
     -- Don't analyze vehicles which don't have a player above them
     if not self.playerVehicleTracker.trackedVehicles[vehicle] then
         if self.vehicleMovementData[vehicle] ~= nil then
-            print(MOD_NAME .. "/VehicleMovementTracker: No longer tracking vehicle id " .. tostring(vehicle.rootNode))
             self.vehicleMovementData[vehicle] = nil
         end
         return
@@ -37,7 +38,6 @@ function VehicleMovementTracker:after_vehicle_updateTick(vehicle)
         movementData.currentPosition = currentPosition
         movementData.directionVector = { x = xDiff, y = yDiff, z = zDiff }
     else
-        print(MOD_NAME .. "/VehicleMovementTracker: Starting to track vehicle id " .. tostring(vehicle.rootNode))
         self.vehicleMovementData[vehicle] = {
             currentPosition = currentPosition,
             directionVector = nil

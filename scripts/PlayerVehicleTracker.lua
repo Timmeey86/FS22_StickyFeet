@@ -19,13 +19,13 @@ end
 ---Updates internal states based on whether or not a vehicle is below that player.
 ---@param player table @The player to be inspected
 function PlayerVehicleTracker:after_player_updateTick(player)
+    if not player.isClient or player ~= g_currentMission.player then return end
 
     if not player.isEntered then
         -- The player is not active as a person in the map, e.g. because they are sitting inside a vehicle
         if self.playerToVehicleData[player] ~= nil then
             -- stop tracking the vhicle
             self.trackedVehicles[self.playerToVehicleData[player].vehicle] = false
-            print(MOD_NAME .. "/PlayerVehicleTracker: Player is no longer above vehicle ID " .. tostring(self.playerToVehicleData[player].vehicle.rootNode))
         end
         self.playerToVehicleData[player] = nil
         return
@@ -39,9 +39,6 @@ function PlayerVehicleTracker:after_player_updateTick(player)
 
     -- Remember data about the matched location (if any)
     if self.lastVehicleMatch ~= nil then
-        if self.playerToVehicleData[player] == nil then
-            print(MOD_NAME .. "/PlayerVehicleTracker: Player is now above vehicle ID " .. tostring(self.lastVehicleMatch.object.rootNode))
-        end
         -- Find the local coordinates of the vehicle at the matched location
         local xVehicle, yVehicle, zVehicle = worldToLocal(self.lastVehicleMatch.object.rootNode, self.lastVehicleMatch.x, self.lastVehicleMatch.y, self.lastVehicleMatch.z)
         self.playerToVehicleData[player] = {
@@ -53,7 +50,6 @@ function PlayerVehicleTracker:after_player_updateTick(player)
         self.trackedVehicles[self.lastVehicleMatch.object] = true
     else
         if self.playerToVehicleData[player] ~= nil then
-            print(MOD_NAME .. "/PlayerVehicleTracker: Player is no longer above vehicle ID " .. tostring(self.playerToVehicleData[player].vehicle.rootNode))
             self.trackedVehicles[self.playerToVehicleData[player].vehicle] = false
         end
         self.playerToVehicleData[player] = nil

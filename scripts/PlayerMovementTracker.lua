@@ -17,6 +17,8 @@ end
 ---Keeps track of if the player is moving and which position they are currently at
 ---@param player table @The player to be tracked
 function PlayerMovementTracker:after_player_updateTick(player)
+    if not player.isClient or player ~= g_currentMission.player then return end
+
     if player.playerStateMachine.playerStateWalk.isActive
         or player.playerStateMachine.playerStateRun.isActive
         or player.playerStateMachine.playerStateJump.isActive

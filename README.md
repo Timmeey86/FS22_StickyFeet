@@ -10,7 +10,7 @@ TODO
 
 ## How to install
 
-1. Download the newest zip from the [Releases page](https://github.com/Timmeey86/FS22_UnloadBalesEarly/releases)
+1. Download the newest zip from the [Releases page](https://github.com/Timmeey86/FS22_StayOnTrailer/releases)
 1. Place the zip file in your FS22 mod folder
 1. Start the game and use like any other mod
 
