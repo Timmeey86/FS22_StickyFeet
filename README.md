@@ -2,7 +2,10 @@
 
 ## Mod description
 
+This is a highly experimental mod in early development stage.
+The mod tries to make it so players will move at the same speed as the vehicle below them while stationary, and have their movement speed be relative to the vehicle below them rather than relative to the ground.
 
+Expect many game-breaking bugs at this stage.
 
 ## Screenshots
 
@@ -10,9 +13,7 @@ TODO
 
 ## How to install
 
-1. Download the newest zip from the [Releases page](https://github.com/Timmeey86/FS22_RideAlong/releases)
-1. Place the zip file in your FS22 mod folder
-1. Start the game and use like any other mod
+TODO
 
 ## How to debug/code
 
