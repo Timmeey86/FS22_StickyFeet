@@ -1,2 +1,2 @@
-del -q "%USERPROFILE%\Documents\my games\FarmingSimulator2022\mods\FS22_StayOnTrailer.zip"
-robocopy . "%USERPROFILE%\Documents\my games\FarmingSimulator2022\mods\FS22_StayOnTrailer" /mir /XD ".git" ".vscode" ".VSCodeCounter" "screenshots" /XF "*.bat" "*.md" "LICENSE" ".gitignore" ".gitattributes"
+del -q "%USERPROFILE%\Documents\my games\FarmingSimulator2022\mods\FS22_RideAlong.zip"
+robocopy . "%USERPROFILE%\Documents\my games\FarmingSimulator2022\mods\FS22_RideAlong" /mir /XD ".git" ".vscode" ".VSCodeCounter" "screenshots" /XF "*.bat" "*.md" "LICENSE" ".gitignore" ".gitattributes"

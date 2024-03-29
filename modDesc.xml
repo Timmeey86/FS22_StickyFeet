@@ -3,8 +3,8 @@
     <author>Farmsim Tim (timmeey86)</author>
     <version>0.0.0.1</version>
     <title>
-        <en>Stay on Trailer</en>
-        <de>Auf Anhängern mitfahren</de>
+        <en>Ride along</en>
+        <de>Mitfahren</de>
     </title>
     
     <description>
@@ -14,29 +14,13 @@
     
     <multiplayer supported="true" />
 
-    <iconFilename>icon_StayOnTrailer.dds</iconFilename>
+    <iconFilename>icon_RideAlong.dds</iconFilename>
 
     <extraSourceFiles>
         <sourceFile filename="scripts/PlayerVehicleTracker.lua" />
         <sourceFile filename="scripts/PlayerMovementTracker.lua" />
         <sourceFile filename="scripts/VehicleMovementTracker.lua" />
         <sourceFile filename="scripts/PlayerLockHandler.lua" />
-        <sourceFile filename="scripts/StayOnTrailer.lua" />
+        <sourceFile filename="scripts/RideAlong.lua" />
     </extraSourceFiles>
-
-    <l10n>
-        <text name="input_LOCK_ONTO_VEHICLE">
-            <en>Ride along</en>
-            <de>Mitfahren</de>
-        </text>
-    </l10n>
-
-    <actions>
-        <action name="LOCK_ONTO_VEHICLE" axis="HALF"/>
-    </actions>
-    <inputBinding>
-        <actionBinding action="LOCK_ONTO_VEHICLE">
-            <binding device="KB_MOUSE_DEFAULT" input="KEY_t"/>
-        </actionBinding>
-    </inputBinding>
 </modDesc>

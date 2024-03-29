@@ -1,7 +1,7 @@
 local modDirectory = g_currentModDirectory or ""
 MOD_NAME = g_currentModName or "unknown"
 
-StayOnTrailer = {}
+RideAlong = {}
 
 -- Create an object which finds and keeps track of the current vehicle below the player
 local playerVehicleTracker = PlayerVehicleTracker.new()
@@ -24,10 +24,7 @@ Mission00.loadMission00Finished = Utils.appendedFunction(Mission00.loadMission00
         vehicleMovementTracker:after_vehicle_updateTick(vehicle)
     end)
 
-    Player.writeUpdateStream = Utils.appendedFunction(Player.writeUpdateStream, function(player, streamId, connection, dirtyMask)
-        playerLockHandler:after_player_writeUpdateStream(player, streamId, connection, dirtyMask)
-    end)
-    Player.readUpdateStream = Utils.appendedFunction(Player.readUpdateStream, function(player, streamId, timestamp, connection)
-        playerLockHandler:after_player_readUpdateStream(player, streamId, timestamp, connection)
+    Player.movePlayer = Utils.overwrittenFunction(Player.movePlayer, function(player, superFunc, dt, movementX, movementY, movementZ)
+        playerLockHandler:instead_of_player_movePlayer(player, superFunc, dt, movementX, movementY, movementZ)
     end)
 end)

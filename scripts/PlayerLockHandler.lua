@@ -71,43 +71,36 @@ function PlayerLockHandler:before_player_updateTick(player)
             local lockPosition = self.playerLockStates[player].lockPosition
             local worldX, worldY, worldZ = localToWorld(vehicleBelowPlayer.rootNode, lockPosition.x, lockPosition.y, lockPosition.z)
             self.desiredPlayerLocations[player] = { x = worldX, y = worldY, z = worldZ }
-            -- In addition to sending the event, move the player locally already so the player zaps around less
-            setTranslation(player.rootNode, worldX, worldY, worldZ)
         end
     else
         self.playerLockStates[player].isLocked = false
         -- Add the vehicle direction to the player movement data
-        if directionVector ~= nil then
-            if directionVector.x ~= 0 or directionVector.y ~= 0 or directionVector.z ~= 0 then
-                local x,y,z = localToWorld(player.rootNode, 0, 0, 0)
-                x = x + directionVector.x
-                y = y + directionVector.y
-                z = z + directionVector.z
-                self.desiredPlayerLocations[player] = { x = x, y = y, z = z }
-                -- In addition to sending the event, move the player locally already so the player zaps around less
-                setTranslation(player.rootNode, x, y, z)
-            end
+        if directionVector ~= nil and (directionVector.x ~= 0 or directionVector.y ~= 0 or directionVector.z ~= 0) then
+            local x,y,z = localToWorld(player.rootNode, 0, 0, 0)
+            x = x + directionVector.x
+            y = y + directionVector.y
+            z = z + directionVector.z
+            self.desiredPlayerLocations[player] = { x = x, y = y, z = z }
         end
     end
 end
 
-function PlayerLockHandler:after_player_writeUpdateStream(player, streamId, connection, dirtyMask)
-    local desiredPlayerLocation = self.desiredPlayerLocations[player]
-    local desiredLocationShallBeSent = connection:getIsServer() and player.isOwner and desiredPlayerLocation ~= nil
-    streamWriteBool(streamId, desiredLocationShallBeSent)
-
-    if desiredLocationShallBeSent then
-        streamWriteFloat32(streamId, desiredPlayerLocation.x)
-        streamWriteFloat32(streamId, desiredPlayerLocation.y)
-        streamWriteFloat32(streamId, desiredPlayerLocation.z)
+---Adjusts the player movement so the player ends up in the desired location
+---@param player table @The player to be moved
+---@param superFunc function @The existing implementation (base game or already adjusted by mods)
+---@param dt number @The delta time
+---@param movementX number @The X movement component
+---@param movementY number @The Y movement component
+---@param movementZ number @The Z movement component
+function PlayerLockHandler:instead_of_player_movePlayer(player, superFunc, dt, movementX, movementY, movementZ)
+    local desiredLocation = self.desiredPlayerLocations[player]
+    if desiredLocation ~= nil then
+        local x,y,z = localToWorld(player.rootNode, 0,0,0)
+        local xDiff, yDiff, zDiff = desiredLocation.x - x, desiredLocation.y - y, desiredLocation.z - z
+        movementX = movementX + xDiff
+        movementY = movementY + yDiff
+        movementZ = movementZ + zDiff
     end
-end
 
-function PlayerLockHandler:after_player_readUpdateStream(player, streamId, timestamp, connection)
-    local desiredLocationWasSent = streamReadBool(streamId)
-    if player.isServer and desiredLocationWasSent then
-        -- This should only ever happen on the server since the flag will be false in all other cases
-        local x, y, z = streamReadFloat32(streamId), streamReadFloat32(streamId), streamReadFloat32(streamId)
-        setTranslation(player.rootNode, x, y, z)
-    end
+    superFunc(player, dt, movementX, movementY, movementZ)
 end
