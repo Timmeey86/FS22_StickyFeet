@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <modDesc descVersion="79">
     <author>Farmsim Tim (timmeey86)</author>
-    <version>0.0.0.1</version>
+    <version>0.0.0.2</version>
     <title>
         <en>Ride along</en>
         <de>Mitfahren</de>
@@ -18,9 +18,10 @@
 
     <extraSourceFiles>
         <sourceFile filename="scripts/PlayerVehicleTracker.lua" />
-        <sourceFile filename="scripts/PlayerMovementTracker.lua" />
         <sourceFile filename="scripts/VehicleMovementTracker.lua" />
         <sourceFile filename="scripts/PlayerLockHandler.lua" />
+        <sourceFile filename="scripts/PlayerMovementStateMachine.lua" />
+        <sourceFile filename="scripts/PlayerMovementStateChangedEvent.lua" />
         <sourceFile filename="scripts/RideAlong.lua" />
     </extraSourceFiles>
 </modDesc>

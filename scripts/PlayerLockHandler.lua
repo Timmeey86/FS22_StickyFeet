@@ -70,7 +70,9 @@ function PlayerLockHandler:before_player_updateTick(player)
             -- Lock the player in place
             local lockPosition = self.playerLockStates[player].lockPosition
             local worldX, worldY, worldZ = localToWorld(vehicleBelowPlayer.rootNode, lockPosition.x, lockPosition.y, lockPosition.z)
-            self.desiredPlayerLocations[player] = { x = worldX, y = worldY, z = worldZ }
+            --self.desiredPlayerLocations[player] = { x = worldX, y = worldY, z = worldZ }
+            dbgPrint(("Forcing player position to %.1f, %.1f, %.1f"):format(worldX,worldY,worldZ))
+            setTranslation(player.rootNode, worldX, worldY, worldZ)
         end
     else
         self.playerLockStates[player].isLocked = false

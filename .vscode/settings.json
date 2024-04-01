@@ -25,6 +25,9 @@
         "g_client",
         "NetworkUtil",
         "streamWriteBool",
-        "streamReadBool"
+        "streamReadBool",
+        "printt",
+        "dbgPrint",
+        "g_server"
     ]
 }
