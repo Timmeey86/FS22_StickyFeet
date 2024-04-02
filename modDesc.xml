@@ -21,7 +21,6 @@
         <sourceFile filename="scripts/VehicleMovementTracker.lua" />
         <sourceFile filename="scripts/PlayerLockHandler.lua" />
         <sourceFile filename="scripts/PlayerMovementStateMachine.lua" />
-        <sourceFile filename="scripts/PlayerMovementStateChangedEvent.lua" />
         <sourceFile filename="scripts/RideAlong.lua" />
     </extraSourceFiles>
 </modDesc>

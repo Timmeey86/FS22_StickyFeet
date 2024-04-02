@@ -28,6 +28,8 @@
         "streamReadBool",
         "printt",
         "dbgPrint",
-        "g_server"
+        "g_server",
+        "Logging",
+        "raycastAll"
     ]
 }

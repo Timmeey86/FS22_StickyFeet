@@ -5,20 +5,35 @@ PlayerLockHandler = {}
 local PlayerLockHandler_mt = Class(PlayerLockHandler)
 
 ---Creates a new object which locks the player in place while they are above a vehicle and not moving, and adjusts their speed when moving above a vehicle
----@param playerMovementTracker table @The object which keeps track of whether or not the player is moving
----@param vehicleMovementTracker table @The object which keeps track of whether or not the vehicle is moving
----@param playerVehicleTracker table @The object which keeps track of which player is above which vehicle
 ---@return table @The new instance
-function PlayerLockHandler.new(playerMovementTracker, vehicleMovementTracker, playerVehicleTracker)
+function PlayerLockHandler.new()
     local self = setmetatable({}, PlayerLockHandler_mt)
-    self.playerMovementTracker = playerMovementTracker
-    self.vehicleMovementTracker = vehicleMovementTracker
-    self.playerVehicleTracker = playerVehicleTracker
-    self.playerLockStates = {}
-    self.desiredPlayerLocations = {}
     return self
 end
 
+function PlayerLockHandler:after_player_updateTick(player)
+    --[[-- if the player is locked to a vehicle, override whatever position they have, no matter if we're client or server
+    if player.trackedVehicle ~= nil and player.trackedVehicle.isMoving then
+        -- Convert the tracked vehicle coordinates to world coordinates
+        local x,y,z = localToWorld(player.trackedVehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y, player.trackedVehicleCoords.z)
+        -- Force move the player to that location
+        dbgPrint("Force moving player ID " .. tostring(player.id) .. " with root node ID " .. tostring(player.rootNode))
+        setTranslation(player.rootNode, x,y + player.model.capsuleHeight / 2,z)
+    end]]
+end
+
+function PlayerLockHandler:after_player_readUpdateStream(player, streamId, timestamp, connection)
+    -- if the player is locked to a vehicle, override whatever position they have, no matter if we're client or server
+    if player.trackedVehicle ~= nil and player.trackedVehicle.isMoving then
+        -- Convert the tracked vehicle coordinates to world coordinates
+        local x,y,z = localToWorld(player.trackedVehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y, player.trackedVehicleCoords.z)
+        -- Force move the player to that location
+        dbgPrint("Force moving player ID " .. tostring(player.id) .. " with root node ID " .. tostring(player.rootNode))
+        setTranslation(player.rootNode, x,y + player.model.capsuleHeight / 2,z)
+    end
+end
+
+--[[
 function PlayerLockHandler:before_player_updateTick(player)
     self.desiredPlayerLocations[player] = nil
     if not player.isClient or player ~= g_currentMission.player then return end
@@ -106,3 +121,4 @@ function PlayerLockHandler:instead_of_player_movePlayer(player, superFunc, dt, m
 
     superFunc(player, dt, movementX, movementY, movementZ)
 end
+]]--

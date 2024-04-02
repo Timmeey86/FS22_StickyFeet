@@ -18,17 +18,7 @@ end
 function PlayerMovementStateMachine:updateMovementState(player, state)
     if player.isMoving ~= state then
         player.isMoving = state
-        local x,y,z = localToWorld(player.rootNode, 0,0,0)
-        if state then
-            dbgPrint(("Player ID %s has started moving at (%.1f,%.1f,%.1f)"):format(player.id, x, y, z))
-        else
-            dbgPrint(("Player ID %s has stopped moving and is now at (%.1f,%.1f,%.1f)"):format(player.id, x, y, z))
-        end
-        if player == g_currentMission.player then
-            --dbgPrint(("Sending an event to the server so they know that player ID %s has moving state %s"):format(player.id, state))
-            --g_client:getServerConnection():sendEvent(PlayerMovementStateChangedEvent.new(player, state))
-        end
-    -- else: ignore; same state
+        -- Nothing else for now; the movement state will be synchronised through writeUpdateStream
     end
 end
 
@@ -62,9 +52,6 @@ function PlayerMovementStateMachine:after_player_readUpdateStream(player, stream
     local isMoving = streamReadBool(streamId)
     if player.id ~= g_currentMission.player.id then
         self:updateMovementState(player, isMoving)
-    else
-        if isMoving ~= player.isMoving then
-            dbgPrint(("Server thinks our client's player has movement state %s while it is %s"):format(isMoving, player.isMoving))
-        end
+        -- Ignore movement state updates for our own player but update any other player (on server and all clients)
     end
 end

@@ -8,8 +8,6 @@ local PlayerVehicleTracker_mt = Class(PlayerVehicleTracker)
 ---@return table @The new instance
 function PlayerVehicleTracker.new()
     local self = setmetatable({}, PlayerVehicleTracker_mt)
-    self.playerToVehicleData = {}
-    self.trackedVehicles = {}
 
     -- The current vehicle which was found by the algorithm. This is only valid temporarily
     self.lastVehicleMatch = nil
@@ -21,13 +19,13 @@ end
 function PlayerVehicleTracker:after_player_updateTick(player)
     if not player.isClient or player ~= g_currentMission.player then return end
 
+    -- If the player is not active as a person in the map, e.g. because they are sitting inside a vehicle, stop tracking
     if not player.isEntered then
-        -- The player is not active as a person in the map, e.g. because they are sitting inside a vehicle
-        if self.playerToVehicleData[player] ~= nil then
-            -- stop tracking the vhicle
-            self.trackedVehicles[self.playerToVehicleData[player].vehicle] = false
+        if player.trackedVehicle ~= nil then
+            dbgPrint(("Player ID %d is no longer tracking vehicle ID %d since player.isEntered = false"):format(player.id, player.trackedVehicle.id))
+            player.trackedVehicle = nil
+            player.trackedVehicleCoords = nil
         end
-        self.playerToVehicleData[player] = nil
         return
     end
 
@@ -35,24 +33,29 @@ function PlayerVehicleTracker:after_player_updateTick(player)
     self.lastVehicleMatch = nil
     local playerWorldX, playerWorldY, playerWorldZ = player:getPositionData()
     local maxDistance = 2
-    raycastClosest(playerWorldX, playerWorldY, playerWorldZ, 0,-1,0, "vehicleRaycastCallback", maxDistance, self, CollisionMask.VEHICLE)
+    raycastAll(playerWorldX, playerWorldY, playerWorldZ, 0,-1,0, "vehicleRaycastCallback", maxDistance, self, CollisionMask.VEHICLE)
 
     -- Remember data about the matched location (if any)
     if self.lastVehicleMatch ~= nil then
+        local isStillTheSameVehicle = player.trackedVehicle ~= nil and player.trackedVehicle.id == self.lastVehicleMatch.object.id
+        if not isStillTheSameVehicle then
+            dbgPrint(("Player ID %d is now tracking vehicle ID %d"):format(player.id, self.lastVehicleMatch.object.id))
+        end
         -- Find the local coordinates of the vehicle at the matched location
         local xVehicle, yVehicle, zVehicle = worldToLocal(self.lastVehicleMatch.object.rootNode, self.lastVehicleMatch.x, self.lastVehicleMatch.y, self.lastVehicleMatch.z)
-        self.playerToVehicleData[player] = {
-            vehicle = self.lastVehicleMatch.object,
-            xLocal = xVehicle,
-            yLocal = yVehicle,
-            zLocal = zVehicle,
-            distance = self.lastVehicleMatch.distance }
-        self.trackedVehicles[self.lastVehicleMatch.object] = true
-    else
-        if self.playerToVehicleData[player] ~= nil then
-            self.trackedVehicles[self.playerToVehicleData[player].vehicle] = false
+        player.trackedVehicle = self.lastVehicleMatch.object
+        if not isStillTheSameVehicle or player.isMoving then
+            -- Only update the tracking location if the player is moving or if this is the first call for this vehicle.
+            -- While the player is stationary, these coordinates mustn't be changed.
+            dbgPrint("Updating tracked vehicle coordinates")
+            player.trackedVehicleCoords = { x = xVehicle, y = yVehicle, z = zVehicle }
         end
-        self.playerToVehicleData[player] = nil
+    else
+        if player.trackedVehicle ~= nil then
+            dbgPrint(("Player ID %d is no longer tracking vehicle ID %d since they are no longer on the vehicle"):format(player.id, player.trackedVehicle.id))
+            player.trackedVehicle = nil
+            player.trackedVehicleCoords = nil
+        end
     end
 end
 
@@ -76,4 +79,45 @@ function PlayerVehicleTracker:vehicleRaycastCallback(potentialVehicleId, x, y, z
 
     -- Any other case: continue searching
     return true
+end
+
+function PlayerVehicleTracker:after_player_writeUpdateStream(player, streamId, connection, dirtyMask)
+    -- Send vehicle tracking data only for the own player on each client
+    local isTrackingVehicle = player.trackedVehicle ~= nil and player.isClient and player == g_currentMission.player
+    streamWriteBool(streamId, isTrackingVehicle)
+    if isTrackingVehicle then
+       NetworkUtil.writeNodeObject(streamId, player.trackedVehicle)
+       streamWriteFloat32(streamId, player.trackedVehicleCoords.x)
+       streamWriteFloat32(streamId, player.trackedVehicleCoords.y)
+       streamWriteFloat32(streamId, player.trackedVehicleCoords.z)
+    end
+end
+
+function PlayerVehicleTracker:after_player_readUpdateStream(player, streamId, timestamp, connection)
+    local isTrackingVehicle = streamReadBool(streamId)
+    if isTrackingVehicle then
+        -- Due to when player data is being written, this can only mean this is another player or it was sent from the server
+        if player == g_currentMission.player then
+            Logging.warning(MOD_NAME .. ": A client received vehicle tracking data for their own player. This shouldn't have happened, so please report this to the mod author via github")
+            return
+        end
+        local wasTracking = player.trackedVehicle ~= nil
+        player.trackedVehicle = NetworkUtil.readNodeObject(streamId)
+        if not wasTracking then
+            dbgPrint(("Another network participant informed us that player ID %d is now tracking vehicle ID %d"):format(player.id, player.trackedVehicle.id))
+        end
+        player.trackedVehicleCoords = {
+            x = streamReadFloat32(streamId),
+            y = streamReadFloat32(streamId),
+            z = streamReadFloat32(streamId)
+        }
+    else
+        if player ~= g_currentMission.player then
+            if player.trackedVehicle ~= nil then
+                dbgPrint(("Another client informed us that player ID %d is no longer tracking vehicle id %d"):format(player.id, player.trackedVehicle.id))
+            end
+            player.trackedVehicle = nil
+            player.trackedVehicleCoords = nil
+        end
+    end
 end
