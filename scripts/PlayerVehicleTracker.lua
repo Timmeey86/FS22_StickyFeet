@@ -25,6 +25,7 @@ function PlayerVehicleTracker:after_player_updateTick(player)
             dbgPrint(("Player ID %d is no longer tracking vehicle ID %d since player.isEntered = false"):format(player.id, player.trackedVehicle.id))
             player.trackedVehicle = nil
             player.trackedVehicleCoords = nil
+            player.desiredGlobalPos = nil
         end
         return
     end
@@ -49,12 +50,22 @@ function PlayerVehicleTracker:after_player_updateTick(player)
             -- While the player is stationary, these coordinates mustn't be changed.
             dbgPrint("Updating tracked vehicle coordinates")
             player.trackedVehicleCoords = { x = xVehicle, y = yVehicle, z = zVehicle }
+            player.desiredGlobalPos = nil
+        elseif player.trackedVehicle.isMoving then
+            dbgPrint("Updating desired global pos since player is locked and not moving, but the vehicle is moving")
+            player.desiredGlobalPos = {}
+            player.desiredGlobalPos.x, player.desiredGlobalPos.y, player.desiredGlobalPos.z =
+                localToWorld(player.trackedVehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y, player.trackedVehicleCoords.z)
+        else
+            -- Neither player or vehicle are moving; nothing to do
+            player.desiredGlobalPos = nil
         end
     else
         if player.trackedVehicle ~= nil then
             dbgPrint(("Player ID %d is no longer tracking vehicle ID %d since they are no longer on the vehicle"):format(player.id, player.trackedVehicle.id))
             player.trackedVehicle = nil
             player.trackedVehicleCoords = nil
+            player.desiredGlobalPos = nil
         end
     end
 end
@@ -83,41 +94,29 @@ end
 
 function PlayerVehicleTracker:after_player_writeUpdateStream(player, streamId, connection, dirtyMask)
     -- Send vehicle tracking data only for the own player on each client
-    local isTrackingVehicle = player.trackedVehicle ~= nil and player.isClient and player == g_currentMission.player
-    streamWriteBool(streamId, isTrackingVehicle)
-    if isTrackingVehicle then
-       NetworkUtil.writeNodeObject(streamId, player.trackedVehicle)
-       streamWriteFloat32(streamId, player.trackedVehicleCoords.x)
-       streamWriteFloat32(streamId, player.trackedVehicleCoords.y)
-       streamWriteFloat32(streamId, player.trackedVehicleCoords.z)
+    local positionNeedsToBeAdjusted = player.desiredGlobalPos ~= nil
+    streamWriteBool(streamId, positionNeedsToBeAdjusted)
+    if positionNeedsToBeAdjusted then
+       -- distribute the desired global position to the server and other clients
+       streamWriteFloat32(streamId, player.desiredGlobalPos.x)
+       streamWriteFloat32(streamId, player.desiredGlobalPos.y)
+       streamWriteFloat32(streamId, player.desiredGlobalPos.z)
     end
 end
 
 function PlayerVehicleTracker:after_player_readUpdateStream(player, streamId, timestamp, connection)
-    local isTrackingVehicle = streamReadBool(streamId)
-    if isTrackingVehicle then
+    local positionNeedsToBeAdjusted = streamReadBool(streamId)
+    if positionNeedsToBeAdjusted then
         -- Due to when player data is being written, this can only mean this is another player or it was sent from the server
         if player == g_currentMission.player then
             Logging.warning(MOD_NAME .. ": A client received vehicle tracking data for their own player. This shouldn't have happened, so please report this to the mod author via github")
             return
         end
-        local wasTracking = player.trackedVehicle ~= nil
-        player.trackedVehicle = NetworkUtil.readNodeObject(streamId)
-        if not wasTracking then
-            dbgPrint(("Another network participant informed us that player ID %d is now tracking vehicle ID %d"):format(player.id, player.trackedVehicle.id))
-        end
-        player.trackedVehicleCoords = {
+        player.desiredGlobalPos = {
             x = streamReadFloat32(streamId),
             y = streamReadFloat32(streamId),
             z = streamReadFloat32(streamId)
         }
-    else
-        if player ~= g_currentMission.player then
-            if player.trackedVehicle ~= nil then
-                dbgPrint(("Another client informed us that player ID %d is no longer tracking vehicle id %d"):format(player.id, player.trackedVehicle.id))
-            end
-            player.trackedVehicle = nil
-            player.trackedVehicleCoords = nil
-        end
+        -- The position will be applied through PlayerLockhandler
     end
 end
