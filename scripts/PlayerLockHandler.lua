@@ -14,9 +14,10 @@ end
 function PlayerLockHandler:after_player_update(player)
     -- If the players position shall be adjusted, do it now. At this point, it is irrelevant whether or not this is our own player or a network participant
     -- The move is applied on both client and server in multiplayer
-    if player.desiredGlobalPos ~= nil then
+
+    if player.desiredGlobalPos ~= nil and player.desiredGlobalPos.y ~= nil then
         dbgPrint("Force moving player ID " .. tostring(player.id) .. " to desired position")
-        setTranslation(player.rootNode, player.desiredGlobalPos.x, player.desiredGlobalPos.y + player.model.capsuleHeight / 2.0, player.desiredGlobalPos.z)
+        setTranslation(player.rootNode, player.desiredGlobalPos.x, player.desiredGlobalPos.y, player.desiredGlobalPos.z)
         -- reset the position so the player can move during the next frame
         player.desiredGlobalPos = nil
     end

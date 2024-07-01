@@ -24,7 +24,7 @@ function VehicleMovementTracker:after_vehicle_updateTick(vehicle)
 
     local currentPosition = {}
     currentPosition.x, currentPosition.y, currentPosition.z = localToWorld(vehicle.rootNode, 0, 0, 0)
-    if vehicle.isServer then
+    if vehicle.isClient then
         if vehicle.currentPosition ~= nil then
             -- Calculate the difference to the previous vehicle position
             local xDiff, yDiff, zDiff = currentPosition.x - vehicle.currentPosition.x, currentPosition.y - vehicle.currentPosition.y, currentPosition.z - vehicle.currentPosition.z
@@ -34,41 +34,5 @@ function VehicleMovementTracker:after_vehicle_updateTick(vehicle)
         else
             self:updateVehicleData(vehicle, currentPosition, { x = 0, y = 0, z = 0 })
         end
-    else
-        -- Assumption: Client receives position from server (to be verified)
-    end
-end
-
-function VehicleMovementTracker:after_vehicle_writeUpdateStream(vehicle, streamId, connection, dirtyMask)
-    -- Send tracking data if data are available and we are not connected to a server (= we are the server)
-    local hasTrackingData = not connection.isServer and vehicle.currentPosition ~= nil
-    streamWriteBool(streamId, hasTrackingData)
-    if hasTrackingData then
-        streamWriteFloat32(streamId, vehicle.currentPosition.x)
-        streamWriteFloat32(streamId, vehicle.currentPosition.y)
-        streamWriteFloat32(streamId, vehicle.currentPosition.z)
-        streamWriteFloat32(streamId, vehicle.directionVector.x)
-        streamWriteFloat32(streamId, vehicle.directionVector.y)
-        streamWriteFloat32(streamId, vehicle.directionVector.z)
-        streamWriteBool(streamId, vehicle.isMoving)
-    end
-end
-
-function VehicleMovementTracker:after_vehicle_readUpdateStream(vehicle, streamId, timestamp, connection)
-    local hasTrackingData = streamReadBool(streamId)
-    if hasTrackingData then
-        vehicle.currentPosition = {
-            x = streamReadFloat32(streamId),
-            y = streamReadFloat32(streamId),
-            z = streamReadFloat32(streamId)
-        }
-        vehicle.directionVector = {
-            x = streamReadFloat32(streamId),
-            y = streamReadFloat32(streamId),
-            z = streamReadFloat32(streamId)
-        }
-        vehicle.isMoving = streamReadBool(streamId)
-    else
-        vehicle.isMoving = false
     end
 end
