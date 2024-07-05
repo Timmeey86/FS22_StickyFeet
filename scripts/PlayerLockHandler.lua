@@ -38,7 +38,10 @@ function PlayerLockHandler:before_player_update(player)
     -- "Teleport" the player whenever necessary
     if player.desiredGlobalPos ~= nil and player.desiredGlobalPos.y ~= nil then
         dbgPrint("Force moving player ID " .. tostring(player.id) .. " to desired position")
-        player:moveToAbsoluteInternal(player.desiredGlobalPos.x, player.desiredGlobalPos.y + 0.01, player.desiredGlobalPos.z)
+        -- +0.01 is required since otherwise the player would fail to find the vehicle in some cases
+        player:moveToAbsoluteInternal(player.desiredGlobalPos.x, player.desiredGlobalPos.y + player.model.capsuleHeight + 0.01, player.desiredGlobalPos.z)
+        setTranslation(player.graphicsRootNode, player.desiredGlobalPos.x, player.desiredGlobalPos.y + 0.01, player.desiredGlobalPos.z)
+
         -- reset the position so the player can move during the next frame
         player.desiredGlobalPos = nil
     end
