@@ -30,8 +30,11 @@ Mission00.loadMission00Finished = Utils.appendedFunction(Mission00.loadMission00
         playerMovementStateMachine:after_player_readUpdateStream(player, streamId, timestamp, connection)
         playerVehicleTracker:after_player_readUpdateStream(player, streamId, timestamp, connection)
     end)
-    Player.update = Utils.appendedFunction(Player.update, function(player, ...)
-        playerLockHandler:after_player_update(player)
+    Player.update = Utils.prependedFunction(Player.update, function(player, ...)
+        playerLockHandler:before_player_update(player)
+    end)
+    Player.movePlayer = Utils.overwrittenFunction(Player.movePlayer, function(player, superFunc, dt, movementX, movementY, movementZ)
+        playerLockHandler:instead_of_player_movePlayer(player, superFunc, dt, movementX, movementY, movementZ)
     end)
 
     -- Track vehicle movement

@@ -11,10 +11,13 @@ function PlayerLockHandler.new()
     return self
 end
 
-function PlayerLockHandler:after_player_update(player)
+---Adjusts player position and movement relative to the vehicle speed while the vehicle is moving.
+---@param player table @The player to be handled
+function PlayerLockHandler:before_player_update(player)
     -- If the players position shall be adjusted, do it now. At this point, it is irrelevant whether or not this is our own player or a network participant
     -- The move is applied on both client and server in multiplayer
 
+    -- This method may get called more often than the network synchronisation happens. Recalculate the position if necessary
     if player.trackedVehicle ~= nil and player.trackedVehicle.isMoving and (player.id ~= g_currentMission.player.id or not player.isMoving) then
         dbgPrint("Updating desired pos of player ID " .. tostring(player.id))
         local desiredGlobalPos = {}
@@ -23,37 +26,43 @@ function PlayerLockHandler:after_player_update(player)
         player.desiredGlobalPos = desiredGlobalPos
     end
 
-    -- TEMP
-    -- Render position information for debugging when desired
-    if player.trackedVehicle ~= nil then
-        local playerRadius, playerHeight = player.model:getCapsuleSize()
-        --DebugUtil.drawDebugNode(player.rootNode, "Player", false, 0)
-        --local playerWorldX, playerWorldY, playerWorldZ = player:getPositionData()
-        --DebugUtil.drawDebugCubeAtWorldPos(
-        --    playerWorldX, playerWorldY, playerWorldZ,
-        --    1,0,0, 0,1,0, playerRadius, playerHeight * 2, playerRadius, 1,0,0)
-        DebugUtil.drawDebugNode(player.rootNode, "Player Root", false, 0)
-        DebugUtil.drawDebugNode(player.graphicsRootNode, "Player Gfx", false, 0)
-        if player.desiredGlobalPos ~= nil then
-            local yx, yy, yz = localDirectionToWorld(player.rootNode, 0, 1, 0)
-            local zx, zy, zz = localDirectionToWorld(player.rootNode, 0, 0, 1)
-            DebugUtil.drawDebugGizmoAtWorldPos(
-                player.desiredGlobalPos.x, player.desiredGlobalPos.y, player.desiredGlobalPos.z,
-                yx, yy, yz, zx, zy, zz,
-                "Desired Pos", false)
-        end
-        if player.trackedVehicleCoords ~= nil then
-            local yx, yy, yz = localDirectionToWorld(player.trackedVehicle.rootNode, 0, 1, 0)
-            local zx, zy, zz = localDirectionToWorld(player.trackedVehicle.rootNode, 0, 0, 1)
-            local x,y,z = localToWorld(player.trackedVehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y, player.trackedVehicleCoords.z)
-            DebugUtil.drawDebugGizmoAtWorldPos(x,y,z, zx,zy,zz, yx,yy,yz, "Tracked coords", false)
+    -- Adjust the movement speed of the controlled player if they are moving on a moving vehicle
+    -- Otherwise, they would move very slowly in vehicle movement direction and very quickly in the opposite direction
+    if player.trackedVehicle ~= nil and player.trackedVehicle.isMoving and player.id == g_currentMission.player.id and player.isMoving then
+        local directionVector = player.trackedVehicle.directionVector
+        if player.isMoving and directionVector ~= nil then
+            player.movementCorrection = directionVector
         end
     end
 
+    -- "Teleport" the player whenever necessary
     if player.desiredGlobalPos ~= nil and player.desiredGlobalPos.y ~= nil then
         dbgPrint("Force moving player ID " .. tostring(player.id) .. " to desired position")
         player:moveToAbsoluteInternal(player.desiredGlobalPos.x, player.desiredGlobalPos.y + 0.01, player.desiredGlobalPos.z)
         -- reset the position so the player can move during the next frame
         player.desiredGlobalPos = nil
     end
+end
+
+---Adjusts the player movement while they are moving on a moving vehicle so the movement speed is equal in any direction
+---@param player table @The player to be moved
+---@param superFunc function @The existing implementation (base game or already adjusted by mods)
+---@param dt number @The delta time
+---@param movementX number @The X movement component
+---@param movementY number @The Y movement component
+---@param movementZ number @The Z movement component
+function PlayerLockHandler:instead_of_player_movePlayer(player, superFunc, dt, movementX, movementY, movementZ)
+
+    if player.movementCorrection ~= nil then
+        -- Add the vehicle movement vector to the player movement vector
+        movementX = movementX + player.movementCorrection.x
+        movementY = movementY + player.movementCorrection.y
+        movementZ = movementZ + player.movementCorrection.z
+
+        -- Reset the correction so it doesn't get applied again
+        player.movementCorrection = nil
+    end
+
+    -- Call the base game behavior with a potentially modified movement vector
+    superFunc(player, dt, movementX, movementY, movementZ)
 end
