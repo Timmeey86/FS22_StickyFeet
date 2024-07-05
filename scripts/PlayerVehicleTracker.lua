@@ -61,39 +61,6 @@ end
 ---Updates internal states based on whether or not a vehicle is below that player.
 ---@param player table @The player to be inspected
 function PlayerVehicleTracker:after_player_updateTick(player)
-    -- TEMP
-    if not self.debugTempSwitch then
-
-        -- Render position information for debugging when desired
-        if self.debugPlayerPos then
-            if player.trackedVehicle ~= nil then
-                local playerRadius, playerHeight = player.model:getCapsuleSize()
-                DebugUtil.drawDebugNode(player.rootNode, "Player", false, 0)
-                local playerWorldX, playerWorldY, playerWorldZ = player:getPositionData()
-                DebugUtil.drawDebugCubeAtWorldPos(
-                    playerWorldX, playerWorldY, playerWorldZ,
-                    1,0,0, 0,1,0, playerRadius, playerHeight * 2, playerRadius, 1,0,0)
-
-                if self.lastVehicleMatch ~= nil then
-                    DebugUtil.drawDebugCubeAtWorldPos(
-                        self.lastVehicleMatch.x, self.lastVehicleMatch.y + playerHeight, self.lastVehicleMatch.z,
-                        1,0,0, 0,1,0, playerRadius, playerHeight * 2, playerRadius, 0,0,1)
-
-                    if self.debugTempSwitch2 then
-                        -- teleport once
-                        player.desiredGlobalPos = {
-                            x = self.lastVehicleMatch.x, y = self.lastVehicleMatch.y + playerHeight, z = self.lastVehicleMatch.z
-                        }
-                        self.debugTempSwitch2 = false
-                    end
-                end
-            end
-        end
-        return
-    else
-        dbgPrint("Raycasting vehicle once")
-        self.debugTempSwitch = false -- only once
-    end
 
     if not player.isClient or player ~= g_currentMission.player then return end
 
@@ -121,7 +88,7 @@ function PlayerVehicleTracker:after_player_updateTick(player)
             dbgPrint(("Player ID %d is now tracking vehicle ID %d"):format(player.id, self.lastVehicleMatch.object.id))
         end
         -- Find the local coordinates of the vehicle at the matched location
-        local xVehicle, yVehicle, zVehicle = worldToLocal(self.lastVehicleMatch.object.rootNode, self.lastVehicleMatch.x, self.lastVehicleMatch.y + player.model.capsuleHeight, self.lastVehicleMatch.z)
+        local xVehicle, yVehicle, zVehicle = worldToLocal(self.lastVehicleMatch.object.rootNode, self.lastVehicleMatch.x, self.lastVehicleMatch.y, self.lastVehicleMatch.z)
         player.trackedVehicle = self.lastVehicleMatch.object
         if not isStillTheSameVehicle or player.isMoving then
             -- Only update the tracking location if the player is moving or if this is the first call for this vehicle.
@@ -173,29 +140,36 @@ end
 
 function PlayerVehicleTracker:after_player_writeUpdateStream(player, streamId, connection, dirtyMask)
     -- Send vehicle tracking data only for the own player on each client
-    local positionNeedsToBeAdjusted = player.desiredGlobalPos ~= nil
+    local positionNeedsToBeAdjusted = player.desiredGlobalPos ~= nil and player.trackedVehicle ~= nil and player.trackedVehicleCoords ~= nil
     streamWriteBool(streamId, positionNeedsToBeAdjusted)
     if positionNeedsToBeAdjusted then
-       -- distribute the desired global position to the server and other clients
-       streamWriteFloat32(streamId, player.desiredGlobalPos.x)
-       streamWriteFloat32(streamId, player.desiredGlobalPos.y)
-       streamWriteFloat32(streamId, player.desiredGlobalPos.z)
+       -- Transmit the reference of the tracked vehicle to other network participants (the ID is different on every client, but NetworkUtil seems to map that for us)
+       NetworkUtil.writeNodeObject(streamId, player.trackedVehicle)
+       -- distribute the player position in relation to the vehicle
+       streamWriteFloat32(streamId, player.trackedVehicleCoords.x)
+       streamWriteFloat32(streamId, player.trackedVehicleCoords.y)
+       streamWriteFloat32(streamId, player.trackedVehicleCoords.z)
     end
 end
 
 function PlayerVehicleTracker:after_player_readUpdateStream(player, streamId, timestamp, connection)
     local positionNeedsToBeAdjusted = streamReadBool(streamId)
     if positionNeedsToBeAdjusted then
-        -- Due to when player data is being written, this can only mean this is another player or it was sent from the server
+        -- Due to when player data is being written, this should only ever be called for other players on the client, and for all players on the dedi server
         if player == g_currentMission.player then
             Logging.warning(MOD_NAME .. ": A client received vehicle tracking data for their own player. This shouldn't have happened, so please report this to the mod author via github")
             return
         end
-        player.desiredGlobalPos = {
+        player.trackedVehicle = NetworkUtil.readNodeObject(streamId)
+        local trackedVehicleCoords = {
             x = streamReadFloat32(streamId),
             y = streamReadFloat32(streamId),
             z = streamReadFloat32(streamId)
         }
+        player.trackedVehicleCoords = trackedVehicleCoords
+        player.desiredGlobalPos = {}
+        player.desiredGlobalPos.x, player.desiredGlobalPos.y, player.desiredGlobalPos.z =
+            localToWorld(player.trackedVehicle.rootNode, trackedVehicleCoords.x, trackedVehicleCoords.y, trackedVehicleCoords.z)
         -- The position will be applied through PlayerLockhandler
     end
 end
