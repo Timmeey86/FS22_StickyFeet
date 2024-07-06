@@ -11,51 +11,7 @@ function PlayerVehicleTracker.new()
 
     -- The current vehicle which was found by the algorithm. This is only valid temporarily
     self.lastVehicleMatch = nil
-
-    self.debugPlayerPos = true
-
-    self.debugTempSwitch = false
-    self.debugTempSwitch2 = false
-    self.debugTempSwitchId = nil
-    self.debugTempSwitchId2 = nil
     return self
-end
-
--- TEMP
----Registers an action event which will trigger on key press
----@param eventKey string @The event key from the modDesc.xml
----@param callbackFunction function @The function to be called on press
----@return boolean @True if event registration was succesful, false if events had been registered already
----@return string @The ID of the action event
-function PlayerVehicleTracker:registerOnPressAction(eventKey, callbackFunction)
-    -- Register the action. Bool variables: Trigger on key release, trigger on key press, trigger always, unknown
-    local registrationSuccessful, actionEventId = g_inputBinding:registerActionEvent(eventKey, self, callbackFunction, false, true, false, true)
-    if registrationSuccessful then
-        g_inputBinding:setActionEventTextPriority(actionEventId, GS_PRIO_HIGHEST)
-        g_inputBinding:setActionEventActive(actionEventId, true)
-        g_inputBinding:setActionEventText(actionEventId, "Debug switch")
-    end
-    return registrationSuccessful, actionEventId
-end
-function PlayerVehicleTracker:temp_registerActionEvents()
-    local isValid, actionEventId = self:registerOnPressAction('RA_DEBUG_BUTTON', PlayerVehicleTracker.activateDebugSwitch)
-    if isValid then self.debugTempSwitchId = actionEventId end
-    isValid, actionEventId = self:registerOnPressAction('RA_DEBUG_BUTTON2', PlayerVehicleTracker.activateDebugSwitch2)
-    if isValid then self.debugTempSwitchId2 = actionEventId end
-end
-function PlayerVehicleTracker:temp_updateActionEvents()
-    if self.debugTempSwitchId ~= nil then
-        g_inputBinding:setActionEventActive(self.debugTempSwitchId, true)
-        g_inputBinding:setActionEventActive(self.debugTempSwitchId2, true)
-    end
-end
-function PlayerVehicleTracker:activateDebugSwitch()
-    dbgPrint("Enabling switch 1")
-    self.debugTempSwitch = true
-end
-function PlayerVehicleTracker:activateDebugSwitch2()
-    dbgPrint("Enabling switch 2")
-    self.debugTempSwitch2 = true
 end
 
 ---Updates internal states based on whether or not a vehicle is below that player.

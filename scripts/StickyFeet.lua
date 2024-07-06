@@ -1,16 +1,18 @@
 local modDirectory = g_currentModDirectory or ""
 MOD_NAME = g_currentModName or "unknown"
 
-RideAlong = {}
+StickyFeet = {}
 
 -- Create an object which finds and keeps track of the current vehicle below the player
 local playerVehicleTracker = PlayerVehicleTracker.new()
 local vehicleMovementTracker = VehicleMovementTracker.new()
 local playerMovementStateMachine = PlayerMovementStateMachine.new()
 local playerLockHandler = PlayerLockHandler.new()
-
+local debugSwitch = false
 function dbgPrint(text)
-    print(("%s [%.4f]: %s"):format(MOD_NAME, g_currentMission.environment.dayTime / 1000, text))
+    if debugSwitch then
+        print(("%s [%.4f]: %s"):format(MOD_NAME, g_currentMission.environment.dayTime / 1000, text))
+    end
 end
 
 -- Delay method registration as otherwise mods which override but don't call superFunc would break our mod
@@ -41,8 +43,4 @@ Mission00.loadMission00Finished = Utils.appendedFunction(Mission00.loadMission00
     Vehicle.updateTick = Utils.appendedFunction(Vehicle.updateTick, function(vehicle, ...)
         vehicleMovementTracker:after_vehicle_updateTick(vehicle)
     end)
-
-    -- TEMP
-    Player.registerActionEvents = Utils.appendedFunction(Player.registerActionEvents, function(player) playerVehicleTracker:temp_registerActionEvents() end)
-    Player.updateActionEvents = Utils.appendedFunction(Player.updateActionEvents, function(player) playerVehicleTracker:temp_updateActionEvents() end)
 end)
