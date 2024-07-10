@@ -50,7 +50,7 @@ end
 
 function PlayerMovementStateMachine:after_player_readUpdateStream(player, streamId, timestamp, connection)
     local isMoving = streamReadBool(streamId)
-    if player.id ~= g_currentMission.player.id then
+    if player ~= nil and g_currentMission.player ~= nil and player.id ~= g_currentMission.player.id then
         self:updateMovementState(player, isMoving)
         -- Ignore movement state updates for our own player but update any other player (on server and all clients)
     end

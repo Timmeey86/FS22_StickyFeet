@@ -53,14 +53,20 @@ function PlayerVehicleTracker:after_player_updateTick(player)
             player.trackedVehicleCoords = { x = xVehicle, y = yVehicle, z = zVehicle }
             player.desiredGlobalPos = nil
         elseif player.trackedVehicle.isMoving then
-            dbgPrint("Updating desired global pos since player is locked and not moving, but the vehicle is moving")
-            local desiredGlobalPos = {}
-            desiredGlobalPos.x, desiredGlobalPos.y, desiredGlobalPos.z =
-                localToWorld(player.trackedVehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y, player.trackedVehicleCoords.z)
-            player.desiredGlobalPos = desiredGlobalPos
+            if not player.wasAlreadyMoving then
+                dbgPrint("Updating desired global pos since player is locked and not moving, but the vehicle is moving")
+                local desiredGlobalPos = {}
+                desiredGlobalPos.x, desiredGlobalPos.y, desiredGlobalPos.z =
+                    localToWorld(player.trackedVehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y, player.trackedVehicleCoords.z)
+                player.desiredGlobalPos = desiredGlobalPos
+            else
+                -- The player has just stopped moving. Ignore this update as they would otherwise zap around a bit
+                player.wasAlreadyMoving = false
+            end
         else
             -- Neither player or vehicle are moving; nothing to do
             player.desiredGlobalPos = nil
+            player.wasAlreadyMoving = false
         end
     else
         if player.trackedVehicle ~= nil then
