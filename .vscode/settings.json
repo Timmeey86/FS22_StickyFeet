@@ -30,6 +30,7 @@
         "dbgPrint",
         "g_server",
         "Logging",
-        "raycastAll"
+        "raycastAll",
+        "MathUtil"
     ]
 }

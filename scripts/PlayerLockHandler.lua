@@ -27,6 +27,25 @@ function PlayerLockHandler:forceMovePlayerToDesiredPos(player)
     player:moveToAbsoluteInternal(player.desiredGlobalPos.x, player.desiredGlobalPos.y + player.model.capsuleHeight + 0.01, player.desiredGlobalPos.z)
     setTranslation(player.graphicsRootNode, player.desiredGlobalPos.x, player.desiredGlobalPos.y + 0.01, player.desiredGlobalPos.z)
 
+    -- adjust the player rotation in accordance with the change in vehicle direction
+    if player.trackedVehicle ~= nil then
+        local vehicle = player.trackedVehicle
+        if vehicle.directionVector ~= nil and vehicle.previousDirectionVector ~= nil then
+            local oldAngle = MathUtil.getYRotationFromDirection(vehicle.previousDirectionVector.x, vehicle.previousDirectionVector.z)
+            local newAngle = MathUtil.getYRotationFromDirection(vehicle.directionVector.x, vehicle.directionVector.z)
+            local angleDiff = newAngle - oldAngle
+            if angleDiff ~= nil and not MathUtil.isNan(angleDiff) then
+                local newPlayerRot = player.rotY + angleDiff
+                if not MathUtil.isNan(newPlayerRot) then
+                    player:setRotation(player.rotX, newPlayerRot)
+                end
+            end
+        end
+        vehicle.previousDirectionVector = vehicle.directionVector
+    else
+        player.previousDirectionVector = nil
+    end
+
     -- reset the position so the player can move during the next frame
     player.desiredGlobalPos = nil
 end
