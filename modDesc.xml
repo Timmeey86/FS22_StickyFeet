@@ -4,12 +4,21 @@
     <version>0.0.0.2</version>
     <title>
         <en>Sticky Feet</en>
-        <de>Klebrige Füße</de>
     </title>
     
     <description>
-        <en><![CDATA[TEST VERSION - DO NOT SHARE]]></en>
-        <de><![CDATA[TEST VERSION - DO NOT SHARE]]></de>
+        <en><![CDATA[This mod allows staying on and moving around on vehicles while they are being driven by the AI or another player.
+        
+The following features currently work in a somewhat stable way:
+- Sticking to the trailer while the player is not moving
+- Moving on the trailer with a constant speed in any direction
+- Auto-rotating with the vehicle as it's turning
+
+The following features are still buggy:
+- Players face different directions on their own screen and on other people's screens
+- When starting to move and stopping, the player zaps around a bit
+- Carrying objects currently requires superstrength, otherwise you'd lose them as soon as you start moving
+]]></en>
     </description>
     
     <multiplayer supported="true" />
