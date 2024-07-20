@@ -26,6 +26,7 @@ The following features are still buggy:
     <iconFilename>icon_StickyFeet.dds</iconFilename>
 
     <extraSourceFiles>
+        <sourceFile filename="scripts/PathDebugger.lua" />
         <sourceFile filename="scripts/PlayerVehicleTracker.lua" />
         <sourceFile filename="scripts/VehicleMovementTracker.lua" />
         <sourceFile filename="scripts/PlayerLockHandler.lua" />

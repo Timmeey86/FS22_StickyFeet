@@ -4,11 +4,12 @@ MOD_NAME = g_currentModName or "unknown"
 StickyFeet = {}
 
 -- Create an object which finds and keeps track of the current vehicle below the player
+local debugSwitch = true
+local pathDebugger = PathDebugger.new(debugSwitch)
 local playerVehicleTracker = PlayerVehicleTracker.new()
-local vehicleMovementTracker = VehicleMovementTracker.new()
-local playerMovementStateMachine = PlayerMovementStateMachine.new()
-local playerLockHandler = PlayerLockHandler.new()
-local debugSwitch = false
+local vehicleMovementTracker = VehicleMovementTracker.new(pathDebugger)
+local playerMovementStateMachine = PlayerMovementStateMachine.new(pathDebugger)
+local playerLockHandler = PlayerLockHandler.new(pathDebugger)
 function dbgPrint(text)
     if debugSwitch then
         print(("%s [%.4f]: %s"):format(MOD_NAME, g_currentMission.environment.dayTime / 1000, text))
@@ -21,7 +22,6 @@ Mission00.loadMission00Finished = Utils.appendedFunction(Mission00.loadMission00
 
     -- Track player movement and vehicle below player
     Player.updateTick = Utils.appendedFunction(Player.updateTick, function(player, ...)
-        playerMovementStateMachine:after_player_updateTick(player)
         playerVehicleTracker:after_player_updateTick(player)
     end)
     Player.writeUpdateStream = Utils.appendedFunction(Player.writeUpdateStream, function(player, streamId, connection, dirtyMask)
@@ -35,8 +35,15 @@ Mission00.loadMission00Finished = Utils.appendedFunction(Mission00.loadMission00
     Player.update = Utils.prependedFunction(Player.update, function(player, ...)
         playerLockHandler:before_player_update(player)
     end)
+    Player.update = Utils.appendedFunction(Player.update, function(player, ...)
+        playerMovementStateMachine:after_player_update(player)
+        pathDebugger:update()
+    end)
     Player.movePlayer = Utils.overwrittenFunction(Player.movePlayer, function(player, superFunc, dt, movementX, movementY, movementZ)
         playerLockHandler:instead_of_player_movePlayer(player, superFunc, dt, movementX, movementY, movementZ)
+    end)
+    Player.draw = Utils.appendedFunction(Player.draw, function(...)
+        pathDebugger:draw()
     end)
 
     -- Track vehicle movement

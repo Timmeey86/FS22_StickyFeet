@@ -5,9 +5,11 @@ PlayerMovementStateMachine = {}
 local PlayerMovementStateMachine_mt = Class(PlayerMovementStateMachine)
 
 ---Creates a new object which keeps track of the movement of players
+---@param pathDebugger table @Used for debugging teleportation issues
 ---@return table @The new instance
-function PlayerMovementStateMachine.new()
+function PlayerMovementStateMachine.new(pathDebugger)
     local self = setmetatable({}, PlayerMovementStateMachine_mt)
+    self.pathDebugger = pathDebugger
     return self
 end
 
@@ -18,13 +20,20 @@ end
 function PlayerMovementStateMachine:updateMovementState(player, state)
     if player.isMoving ~= state then
         player.isMoving = state
+        if state then 
+            dbgPrint("Player is now moving")
+            self.pathDebugger:startMovement()
+        else 
+            dbgPrint("Player is no longer moving")
+            self.pathDebugger:stopMovement()
+        end
         -- Nothing else for now; the movement state will be synchronised through writeUpdateStream
     end
 end
 
 ---Keeps track of if the player is moving and which position they are currently at
 ---@param player table @The player to be tracked
-function PlayerMovementStateMachine:after_player_updateTick(player)
+function PlayerMovementStateMachine:after_player_update(player)
     -- Remarks: updateTick gets called on both server and client, with different player IDs, but the player states seem to always be false on the server
 
     if player.isClient and player == g_currentMission.player then
@@ -51,6 +60,7 @@ end
 function PlayerMovementStateMachine:after_player_readUpdateStream(player, streamId, timestamp, connection)
     local isMoving = streamReadBool(streamId)
     if player ~= nil and g_currentMission.player ~= nil and player.id ~= g_currentMission.player.id then
+        dbgPrint("Processing movement in readUpdateStream")
         self:updateMovementState(player, isMoving)
         -- Ignore movement state updates for our own player but update any other player (on server and all clients)
     end

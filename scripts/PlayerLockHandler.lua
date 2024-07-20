@@ -5,9 +5,11 @@ PlayerLockHandler = {}
 local PlayerLockHandler_mt = Class(PlayerLockHandler)
 
 ---Creates a new object which locks the player in place while they are above a vehicle and not moving, and adjusts their speed when moving above a vehicle
+---@param pathDebugger table @Used for debugging teleportation issues
 ---@return table @The new instance
-function PlayerLockHandler.new()
+function PlayerLockHandler.new(pathDebugger)
     local self = setmetatable({}, PlayerLockHandler_mt)
+    self.pathDebugger = pathDebugger
     return self
 end
 
@@ -26,6 +28,7 @@ function PlayerLockHandler:forceMovePlayerToDesiredPos(player)
     -- +0.01 is required since otherwise the player would fail to find the vehicle in some cases
     player:moveToAbsoluteInternal(player.desiredGlobalPos.x, player.desiredGlobalPos.y + player.model.capsuleHeight + 0.01, player.desiredGlobalPos.z)
     setTranslation(player.graphicsRootNode, player.desiredGlobalPos.x, player.desiredGlobalPos.y + 0.01, player.desiredGlobalPos.z)
+    self.pathDebugger:addPlayerPos(player)
 
     -- adjust the player rotation in accordance with the change in vehicle direction
     if player.trackedVehicle ~= nil then
@@ -109,6 +112,7 @@ function PlayerLockHandler:instead_of_player_movePlayer(player, superFunc, dt, m
         end
 
         dbgPrint("Correcting player movement speed")
+        self.pathDebugger:addPlayerPos(player)
     elseif player.desiredGlobalPos ~= nil then
         dbgPrint("Moving without movement speed correction")
     end

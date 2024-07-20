@@ -123,6 +123,10 @@ function PlayerVehicleTracker:after_player_readUpdateStream(player, streamId, ti
             return
         end
         player.trackedVehicle = NetworkUtil.readNodeObject(streamId)
+        if player.trackedVehicle == nil then
+            -- Should in theory not happen, but did occur in multiplayer
+            return
+        end
         local trackedVehicleCoords = {
             x = streamReadFloat32(streamId),
             y = streamReadFloat32(streamId),

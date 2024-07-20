@@ -5,17 +5,20 @@ VehicleMovementTracker = {}
 local VehicleMovementTracker_mt = Class(VehicleMovementTracker)
 
 ---Creates a new tracker for vehicles
+---@param pathDebugger table @Used for debugging teleportation issues
 ---@return table @the new instance
-function VehicleMovementTracker.new()
+function VehicleMovementTracker.new(pathDebugger)
     local self = setmetatable({}, VehicleMovementTracker_mt)
+    self.pathDebugger = pathDebugger
     return self
 end
 
 function VehicleMovementTracker:updateVehicleData(vehicle, position, directionVector)
     vehicle.currentPosition = position
     vehicle.directionVector = directionVector
-    vehicle.isMoving = math.abs(directionVector.x) > 0.001 or math.abs(directionVector.y) > 0.001 or math.abs(directionVector.z) > 0.001
+    vehicle.isMoving = math.abs(directionVector.x) > 0.001 or math.abs(directionVector.y) > 0.001 or math.abs(directionVector.z) > 0.0010
     -- Nothing else for now
+    self.pathDebugger:addVehiclePos(vehicle)
 end
 
 ---Keeps track of the location and direction of any vehicle
