@@ -5,7 +5,8 @@ StickyFeet = {}
 
 -- Create an object which finds and keeps track of the current vehicle below the player
 local debugSwitch = true
-local pathDebugger = PathDebugger.new(debugSwitch)
+local pathDebuggerSwitch = true
+local pathDebugger = PathDebugger.new(pathDebuggerSwitch)
 local playerVehicleTracker = PlayerVehicleTracker.new()
 local vehicleMovementTracker = VehicleMovementTracker.new(pathDebugger)
 local playerMovementStateMachine = PlayerMovementStateMachine.new(pathDebugger)
@@ -21,8 +22,8 @@ end
 Mission00.loadMission00Finished = Utils.appendedFunction(Mission00.loadMission00Finished, function(...)
 
     -- Track player movement and vehicle below player
-    Player.updateTick = Utils.appendedFunction(Player.updateTick, function(player, ...)
-        playerVehicleTracker:after_player_updateTick(player)
+    -- Note to self: State Machines should always be updated first so any state changes can be processed within the same update() call
+    Player.update = Utils.appendedFunction(Player.update, function(player, ...)
     end)
     Player.writeUpdateStream = Utils.appendedFunction(Player.writeUpdateStream, function(player, streamId, connection, dirtyMask)
         playerMovementStateMachine:after_player_writeUpdateStream(player, streamId, connection, dirtyMask)
@@ -33,11 +34,10 @@ Mission00.loadMission00Finished = Utils.appendedFunction(Mission00.loadMission00
         playerVehicleTracker:after_player_readUpdateStream(player, streamId, timestamp, connection)
     end)
     Player.update = Utils.prependedFunction(Player.update, function(player, ...)
-        playerLockHandler:before_player_update(player)
-    end)
-    Player.update = Utils.appendedFunction(Player.update, function(player, ...)
-        playerMovementStateMachine:after_player_update(player)
         pathDebugger:update()
+        playerMovementStateMachine:before_player_update(player)
+        playerVehicleTracker:before_player_update(player)
+        playerLockHandler:before_player_update(player)
     end)
     Player.movePlayer = Utils.overwrittenFunction(Player.movePlayer, function(player, superFunc, dt, movementX, movementY, movementZ)
         playerLockHandler:instead_of_player_movePlayer(player, superFunc, dt, movementX, movementY, movementZ)
@@ -47,7 +47,7 @@ Mission00.loadMission00Finished = Utils.appendedFunction(Mission00.loadMission00
     end)
 
     -- Track vehicle movement
-    Vehicle.updateTick = Utils.appendedFunction(Vehicle.updateTick, function(vehicle, ...)
+    Vehicle.update = Utils.appendedFunction(Vehicle.update, function(vehicle, ...)
         vehicleMovementTracker:after_vehicle_updateTick(vehicle)
     end)
 end)

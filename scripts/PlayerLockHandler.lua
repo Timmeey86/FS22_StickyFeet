@@ -79,6 +79,8 @@ function PlayerLockHandler:before_player_update(player)
         dbgPrint("Force moving player ID " .. tostring(player.id) .. " to desired position in before_player_update")
         self:forceMovePlayerToDesiredPos(player)
     end
+
+    self.pathDebugger:recordPlayerUpdateCall()
 end
 
 ---Adjusts the player movement while they are moving on a moving vehicle so the movement speed is equal in any direction
@@ -90,6 +92,9 @@ end
 ---@param movementZ number @The Z movement component
 function PlayerLockHandler:instead_of_player_movePlayer(player, superFunc, dt, movementX, movementY, movementZ)
 
+    self.pathDebugger:recordPlayerMovePlayerCall()
+
+    local correctionWasApplied = false
     if player.movementCorrection ~= nil then
         -- Add the vehicle movement vector to the player movement vector
         movementX = movementX + player.movementCorrection.x
@@ -102,21 +107,25 @@ function PlayerLockHandler:instead_of_player_movePlayer(player, superFunc, dt, m
         -- When the player starts moving, the player snaps back a bit
         -- In order to counter this, we correct the player position one more time before applying the move
         if not player.wasAlreadyMoving then
-            dbgPrint("Updating desired pos of player ID " .. tostring(player.id) .. " in instead_of_player_movePlayer")
-            self:updateDesiredGlobalPos(player)
-            dbgPrint("Force moving player ID " .. tostring(player.id) .. " to desired position in instead_of_player_movePlayer")
-            self:forceMovePlayerToDesiredPos(player)
+            --dbgPrint("Updating desired pos of player ID " .. tostring(player.id) .. " in instead_of_player_movePlayer")
+            --self:updateDesiredGlobalPos(player)
+            --dbgPrint("Force moving player ID " .. tostring(player.id) .. " to desired position in instead_of_player_movePlayer")
+            --self:forceMovePlayerToDesiredPos(player)
 
             -- make sure this only gets executed when switching from "not moving" to "moving"
             player.wasAlreadyMoving = true
         end
+        correctionWasApplied = true
 
         dbgPrint("Correcting player movement speed")
-        self.pathDebugger:addPlayerPos(player)
     elseif player.desiredGlobalPos ~= nil then
         dbgPrint("Moving without movement speed correction")
     end
 
     -- Call the base game behavior with a potentially modified movement vector
     superFunc(player, dt, movementX, movementY, movementZ)
+
+    if correctionWasApplied then
+        self.pathDebugger:addPlayerPos(player)
+    end
 end

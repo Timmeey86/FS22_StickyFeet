@@ -18,9 +18,11 @@ end
 ---@param player table @The player which changed
 ---@param state any
 function PlayerMovementStateMachine:updateMovementState(player, state)
+    player.justToggledMovementState = false
     if player.isMoving ~= state then
         player.isMoving = state
-        if state then 
+        player.justToggledMovementState = true
+        if state then
             dbgPrint("Player is now moving")
             self.pathDebugger:startMovement()
         else 
@@ -33,7 +35,7 @@ end
 
 ---Keeps track of if the player is moving and which position they are currently at
 ---@param player table @The player to be tracked
-function PlayerMovementStateMachine:after_player_update(player)
+function PlayerMovementStateMachine:before_player_update(player)
     -- Remarks: updateTick gets called on both server and client, with different player IDs, but the player states seem to always be false on the server
 
     if player.isClient and player == g_currentMission.player then

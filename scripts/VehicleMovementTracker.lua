@@ -18,6 +18,7 @@ function VehicleMovementTracker:updateVehicleData(vehicle, position, directionVe
     vehicle.directionVector = directionVector
     vehicle.isMoving = math.abs(directionVector.x) > 0.001 or math.abs(directionVector.y) > 0.001 or math.abs(directionVector.z) > 0.0010
     -- Nothing else for now
+    self.pathDebugger:recordVehicleUpdateCall()
     self.pathDebugger:addVehiclePos(vehicle)
 end
 
