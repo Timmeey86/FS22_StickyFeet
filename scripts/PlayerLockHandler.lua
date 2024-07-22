@@ -96,18 +96,6 @@ function PlayerLockHandler:instead_of_player_movePlayer(player, superFunc, dt, m
         -- Reset the correction so it doesn't get applied again
         player.movementCorrection = nil
 
-        -- When the player starts moving, the player snaps back a bit
-        -- In order to counter this, we correct the player position one more time before applying the move
-        if not player.wasAlreadyMoving then
-            dbgPrint("Updating desired pos of player ID " .. tostring(player.id) .. " in instead_of_player_movePlayer")
-            self:updateDesiredGlobalPos(player)
-            dbgPrint("Force moving player ID " .. tostring(player.id) .. " to desired position in instead_of_player_movePlayer")
-            self:forceMovePlayerToDesiredPos(player)
-
-            -- make sure this only gets executed when switching from "not moving" to "moving"
-            player.wasAlreadyMoving = true
-        end
-
         dbgPrint("Correcting player movement speed")
     elseif player.desiredGlobalPos ~= nil then
         dbgPrint("Moving without movement speed correction")
