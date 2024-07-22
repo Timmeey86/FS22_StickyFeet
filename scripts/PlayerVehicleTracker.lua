@@ -14,6 +14,16 @@ function PlayerVehicleTracker.new()
     return self
 end
 
+---Recalculates the positipon the player should be at based on the locked vehicle coordinates
+---@param player table @The player to be inspected
+function PlayerVehicleTracker:updateDesiredGlobalPos(player)
+    local desiredGlobalPos = {}
+    desiredGlobalPos.x, desiredGlobalPos.y, desiredGlobalPos.z =
+        localToWorld(player.trackedVehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y, player.trackedVehicleCoords.z)
+    player.desiredGlobalPos = desiredGlobalPos
+    dbgPrint(("Desired pos is %.3f, %.3f, %.3f"):format(desiredGlobalPos.x, desiredGlobalPos.y, desiredGlobalPos.z))
+end
+
 ---Updates internal states based on whether or not a vehicle is below that player.
 ---@param player table @The player to be inspected
 function PlayerVehicleTracker:before_player_update(player)
@@ -46,20 +56,21 @@ function PlayerVehicleTracker:before_player_update(player)
         -- Find the local coordinates of the vehicle at the matched location
         local xVehicle, yVehicle, zVehicle = worldToLocal(self.lastVehicleMatch.object.rootNode, self.lastVehicleMatch.x, self.lastVehicleMatch.y, self.lastVehicleMatch.z)
         player.trackedVehicle = self.lastVehicleMatch.object
-        if not isStillTheSameVehicle or (player.isMoving and not player.justToggledMovementState) then
+        if not isStillTheSameVehicle or player.isMoving then
             -- Only update the tracking location if the player is moving or if this is the first call for this vehicle.
             -- While the player is stationary, these coordinates mustn't be changed.
-            -- One exception is if the player just started moving. In that case, the desired coordinates need to be adjusted one last time
-            dbgPrint("Updating tracked vehicle coordinates")
-            player.trackedVehicleCoords = { x = xVehicle, y = yVehicle, z = zVehicle }
-            player.desiredGlobalPos = nil
+            -- However, movement doesn't seem to be applied on the first tick so we need to handle that specially
+            if player.updatesSinceMovementStart ~= nil and player.updatesSinceMovementStart > 1 then
+                dbgPrint("Updating tracked vehicle coordinates")
+                player.trackedVehicleCoords = { x = xVehicle, y = yVehicle, z = zVehicle }
+                player.desiredGlobalPos = nil
+            else
+                dbgPrint("Working around initial player movement")
+                self:updateDesiredGlobalPos(player)
+            end
         elseif player.trackedVehicle.isMoving then
             dbgPrint("Updating desired global pos since player is locked and not moving, but the vehicle is moving")
-            local desiredGlobalPos = {}
-            desiredGlobalPos.x, desiredGlobalPos.y, desiredGlobalPos.z =
-                localToWorld(player.trackedVehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y, player.trackedVehicleCoords.z)
-            player.desiredGlobalPos = desiredGlobalPos
-            dbgPrint(("Desired pos is %.3f, %.3f, %.3f"):format(desiredGlobalPos.x, desiredGlobalPos.y, desiredGlobalPos.z))
+            self:updateDesiredGlobalPos(player)
         else
             -- Neither player or vehicle are moving; nothing to do
             player.desiredGlobalPos = nil

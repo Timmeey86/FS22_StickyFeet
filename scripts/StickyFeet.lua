@@ -45,6 +45,9 @@ Mission00.loadMission00Finished = Utils.appendedFunction(Mission00.loadMission00
     Player.draw = Utils.appendedFunction(Player.draw, function(...)
         pathDebugger:draw()
     end)
+    Player.updateTick = Utils.prependedFunction(Player.updateTick, function(player, ...)
+        pathDebugger:recordPlayerUpdateTickCall()
+    end)
 
     -- Track vehicle movement
     Vehicle.update = Utils.appendedFunction(Vehicle.update, function(vehicle, ...)

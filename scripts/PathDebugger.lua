@@ -26,6 +26,12 @@ function PathDebugger:recordPlayerUpdateCall()
         self.playerUpdateCalls[self.index] = true
     end
 end
+function PathDebugger:recordPlayerUpdateTickCall()
+    if self.debugSwitch then
+        self:trace("Before player:updateTick")
+        self.playerUpdateCalls[self.index] = true
+    end
+end
 
 function PathDebugger:recordVehicleUpdateCall()
     if self.debugSwitch then
@@ -47,6 +53,7 @@ function PathDebugger:addPlayerPos(player)
             local x,y,z = getTranslation(player.rootNode)
             self.playerPositions[self.index] = { x = x, y = y, z = z }
             self:trace(("Adding player position: %.3f, %.3f, %.3f"):format(x,y,z))
+            self:trace("Updates since movement start: " .. tostring(player.updatesSinceMovementStart))
         end
     end
 end

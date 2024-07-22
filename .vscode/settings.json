@@ -32,6 +32,8 @@
         "Logging",
         "raycastAll",
         "MathUtil",
-        "getCorrectTextSize"
+        "getCorrectTextSize",
+        "streamWriteInt32",
+        "streamReadInt32"
     ]
 }

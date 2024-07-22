@@ -13,15 +13,6 @@ function PlayerLockHandler.new(pathDebugger)
     return self
 end
 
----Recalculates the position the player should be at, based on the current coordinates of the tracked vehicle
----@param player table @The player
-function PlayerLockHandler:updateDesiredGlobalPos(player)
-    local desiredGlobalPos = {}
-    desiredGlobalPos.x, desiredGlobalPos.y, desiredGlobalPos.z =
-        localToWorld(player.trackedVehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y, player.trackedVehicleCoords.z)
-    player.desiredGlobalPos = desiredGlobalPos
-end
-
 ---Force moves the player to the precalculated desired position
 ---@param player table @The player
 function PlayerLockHandler:forceMovePlayerToDesiredPos(player)
@@ -59,23 +50,23 @@ function PlayerLockHandler:before_player_update(player)
     -- If the players position shall be adjusted, do it now. At this point, it is irrelevant whether or not this is our own player or a network participant
     -- The move is applied on both client and server in multiplayer
 
-    -- This method may get called more often than the network synchronisation happens. Recalculate the position if necessary
-    if player.trackedVehicle ~= nil and player.trackedVehicle.isMoving and (player.id ~= g_currentMission.player.id or not player.isMoving) then
-        dbgPrint("Updating desired pos of player ID " .. tostring(player.id) .. " in before_player_update")
-        self:updateDesiredGlobalPos(player)
-    end
-
     -- Adjust the movement speed of the controlled player if they are moving on a moving vehicle
     -- Otherwise, they would move very slowly in vehicle movement direction and very quickly in the opposite direction
     if player.trackedVehicle ~= nil and player.trackedVehicle.isMoving and player.id == g_currentMission.player.id and player.isMoving then
-        local directionVector = player.trackedVehicle.directionVector
-        if player.isMoving and directionVector ~= nil then
-            player.movementCorrection = directionVector
+        -- Special case: When correcting player movement, the first update call will not actually move the player for what reason ever.
+        if player.updatesSinceMovementStart ~= nil and player.updatesSinceMovementStart < 2 then
+            dbgPrint("Force moving player ID " .. tostring(player.id) .. " as a workaround")
+            self:forceMovePlayerToDesiredPos(player)
+        else
+            local directionVector = player.trackedVehicle.directionVector
+            if player.isMoving and directionVector ~= nil then
+                player.movementCorrection = directionVector
+            end
         end
     end
 
     -- "Teleport" the player whenever necessary
-    if player.desiredGlobalPos ~= nil and player.desiredGlobalPos.y ~= nil then
+    if not player.isMoving and player.desiredGlobalPos ~= nil and player.desiredGlobalPos.y ~= nil then
         dbgPrint("Force moving player ID " .. tostring(player.id) .. " to desired position in before_player_update")
         self:forceMovePlayerToDesiredPos(player)
     end
@@ -96,6 +87,7 @@ function PlayerLockHandler:instead_of_player_movePlayer(player, superFunc, dt, m
 
     local correctionWasApplied = false
     if player.movementCorrection ~= nil then
+        dbgPrint(("Movement before correction is %.3f, %.3f, %.3f"):format(movementX, movementY, movementZ))
         -- Add the vehicle movement vector to the player movement vector
         movementX = movementX + player.movementCorrection.x
         movementY = movementY + player.movementCorrection.y
@@ -104,20 +96,10 @@ function PlayerLockHandler:instead_of_player_movePlayer(player, superFunc, dt, m
         -- Reset the correction so it doesn't get applied again
         player.movementCorrection = nil
 
-        -- When the player starts moving, the player snaps back a bit
-        -- In order to counter this, we correct the player position one more time before applying the move
-        if not player.wasAlreadyMoving then
-            --dbgPrint("Updating desired pos of player ID " .. tostring(player.id) .. " in instead_of_player_movePlayer")
-            --self:updateDesiredGlobalPos(player)
-            --dbgPrint("Force moving player ID " .. tostring(player.id) .. " to desired position in instead_of_player_movePlayer")
-            --self:forceMovePlayerToDesiredPos(player)
-
-            -- make sure this only gets executed when switching from "not moving" to "moving"
-            player.wasAlreadyMoving = true
-        end
         correctionWasApplied = true
 
         dbgPrint("Correcting player movement speed")
+        dbgPrint(("Movement after correction is %.3f, %.3f, %.3f"):format(movementX, movementY, movementZ))
     elseif player.desiredGlobalPos ~= nil then
         dbgPrint("Moving without movement speed correction")
     end
