@@ -16,7 +16,7 @@ end
 
 ---Updates internal states based on whether or not a vehicle is below that player.
 ---@param player table @The player to be inspected
-function PlayerVehicleTracker:after_player_updateTick(player)
+function PlayerVehicleTracker:checkForVehicleBelow(player)
 
     if not player.isClient or player ~= g_currentMission.player then return end
 
@@ -27,6 +27,7 @@ function PlayerVehicleTracker:after_player_updateTick(player)
             player.trackedVehicle = nil
             player.trackedVehicleCoords = nil
             player.desiredGlobalPos = nil
+            player.vehicleDirectionVector = nil
         end
         return
     end
@@ -52,15 +53,24 @@ function PlayerVehicleTracker:after_player_updateTick(player)
             dbgPrint("Updating tracked vehicle coordinates")
             player.trackedVehicleCoords = { x = xVehicle, y = yVehicle, z = zVehicle }
             player.desiredGlobalPos = nil
+            player.vehicleDirectionVector = nil
         elseif player.trackedVehicle.isMoving then
             dbgPrint("Updating desired global pos since player is locked and not moving, but the vehicle is moving")
             local desiredGlobalPos = {}
             desiredGlobalPos.x, desiredGlobalPos.y, desiredGlobalPos.z =
                 localToWorld(player.trackedVehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y, player.trackedVehicleCoords.z)
+            if player.desiredGlobalPos ~= nil then
+                player.vehicleDirectionVector = {
+                    x = desiredGlobalPos.x - player.desiredGlobalPos.x,
+                    y = desiredGlobalPos.y - player.desiredGlobalPos.y,
+                    z = desiredGlobalPos.z - player.desiredGlobalPos.z
+                }
+            end
             player.desiredGlobalPos = desiredGlobalPos
         else
             -- Neither player or vehicle are moving; nothing to do
             player.desiredGlobalPos = nil
+            player.vehicleDirectionVector = nil
         end
     else
         if player.trackedVehicle ~= nil then
@@ -68,6 +78,7 @@ function PlayerVehicleTracker:after_player_updateTick(player)
             player.trackedVehicle = nil
             player.trackedVehicleCoords = nil
             player.desiredGlobalPos = nil
+            player.vehicleDirectionVector = nil
         end
     end
 end

@@ -24,7 +24,7 @@ end
 
 ---Keeps track of if the player is moving and which position they are currently at
 ---@param player table @The player to be tracked
-function PlayerMovementStateMachine:after_player_updateTick(player)
+function PlayerMovementStateMachine:checkMovementState(player)
     -- Remarks: updateTick gets called on both server and client, with different player IDs, but the player states seem to always be false on the server
 
     if player.isClient and player == g_currentMission.player then

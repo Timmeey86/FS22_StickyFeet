@@ -20,7 +20,7 @@ end
 
 ---Keeps track of the location and direction of any vehicle
 ---@param vehicle table @The vehicle to be potentially tracked
-function VehicleMovementTracker:after_vehicle_updateTick(vehicle)
+function VehicleMovementTracker:checkVehicle(vehicle)
 
     local currentPosition = {}
     currentPosition.x, currentPosition.y, currentPosition.z = localToWorld(vehicle.rootNode, 0, 0, 0)
