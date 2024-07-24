@@ -58,7 +58,7 @@ function PlayerVehicleTracker:checkForVehicleBelow(player)
             dbgPrint("Updating desired global pos since player is locked and not moving, but the vehicle is moving")
             local desiredGlobalPos = {}
             desiredGlobalPos.x, desiredGlobalPos.y, desiredGlobalPos.z =
-                localToWorld(player.trackedVehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y, player.trackedVehicleCoords.z)
+                localToWorld(player.trackedVehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y + player.model.capsuleTotalHeight * 0.5, player.trackedVehicleCoords.z)
             if player.desiredGlobalPos ~= nil then
                 player.vehicleDirectionVector = {
                     x = desiredGlobalPos.x - player.desiredGlobalPos.x,

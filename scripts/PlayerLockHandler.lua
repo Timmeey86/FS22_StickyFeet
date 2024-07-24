@@ -14,21 +14,7 @@ end
 ---Force moves the player to the precalculated desired position
 ---@param player table @The player
 function PlayerLockHandler:forceMovePlayerToDesiredPos(player)
-    if player.trackedVehicle ~= nil then
-        local directionVector = player.vehicleDirectionVector
-        if directionVector ~= nil then
-            if player.movementCorrection == nil then
-                player.movementCorrection = directionVector
-            else
-                -- Movement correction has not been applied yet, add the new vector
-                player.movementCorrection = {
-                    x = player.movementCorrection.x + directionVector.x,
-                    y = player.movementCorrection.y + directionVector.y,
-                    z = player.movementCorrection.z + directionVector.z
-                }
-            end
-        end
-    end
+    -- Movement is done in :movePlayer for now
 end
 
 ---Adjusts player position and movement relative to the vehicle speed while the vehicle is moving.
@@ -86,5 +72,14 @@ function PlayerLockHandler:instead_of_player_movePlayer(player, superFunc, dt, m
     end
 
     -- Call the base game behavior with a potentially modified movement vector
+    if player.movementCorrection == nil then
+        if player.trackedVehicle ~= nil and player.desiredGlobalPos ~= nil then
+            local startX, startY, startZ = localToWorld(player.rootNode,0,0,0)
+            local endX, endY, endZ = player.desiredGlobalPos.x, player.desiredGlobalPos.y, player.desiredGlobalPos.z
+            movementX = movementX + endX - startX
+            movementY = movementY + endY - startY
+            movementZ = movementZ + endZ - startZ
+        end
+    end
     superFunc(player, dt, movementX, movementY, movementZ)
 end

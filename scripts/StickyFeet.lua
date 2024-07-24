@@ -56,24 +56,14 @@ Player.draw = Utils.overwrittenFunction(Player.draw, function(player, superFunc)
     DebugUtil.drawDebugNode(player.graphicsRootNode, "GfxNode", false)
     if player.trackedVehicleCoords ~= nil then
         local x,y,z = localToWorld(player.trackedVehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y, player.trackedVehicleCoords.z)
-        DebugUtil.drawDebugCircle(x,y,z, 0.05, 32, {1,0,0})
+        DebugUtil.drawDebugCircle(x, y, z, 0.05, 32, {1,0,0})
     end
     if player.desiredGlobalPos ~= nil then
         DebugUtil.drawDebugCircle(player.desiredGlobalPos.x, player.desiredGlobalPos.y, player.desiredGlobalPos.z, 0.05, 32, {0,0,1})
-        if player.vehicleDirectionVector ~= nil then
-            local startX, startY, startZ = player.desiredGlobalPos.x, player.desiredGlobalPos.y, player.desiredGlobalPos.z
-            local endX, endY, endZ = startX + player.vehicleDirectionVector.x * 5, startY + player.vehicleDirectionVector.y * 5, startZ + player.vehicleDirectionVector.z * 5
-            DebugUtil.drawDebugLine(startX, startY, startZ, endX, endY, endZ, 0,1,1)
-        end
     end
     if player.trackedVehicle ~= nil then
         local vehicle = player.trackedVehicle
         DebugUtil.drawDebugNode(vehicle.rootNode, "Vehicle", false)
-        if vehicle.directionVector ~= nil then
-            local startX, startY, startZ = localToWorld(vehicle.rootNode, 0,2,0)
-            local endX, endY, endZ = startX + vehicle.directionVector.x * 5, startY + vehicle.directionVector.y * 5, startZ + vehicle.directionVector.z * 5
-            DebugUtil.drawDebugLine(startX, startY, startZ, endX, endY, endZ, 0,1,0)
-        end
     end
 end)
 
