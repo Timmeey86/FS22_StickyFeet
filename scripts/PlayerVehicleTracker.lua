@@ -5,9 +5,11 @@ PlayerVehicleTracker = {}
 local PlayerVehicleTracker_mt = Class(PlayerVehicleTracker)
 
 ---Creates a new object which keeps track of which player is above which vehicle
+---@param mainStateMachine table @The main state machine of the mod
 ---@return table @The new instance
-function PlayerVehicleTracker.new()
+function PlayerVehicleTracker.new(mainStateMachine)
     local self = setmetatable({}, PlayerVehicleTracker_mt)
+    self.mainStateMachine = mainStateMachine
 
     -- The current vehicle which was found by the algorithm. This is only valid temporarily
     self.lastVehicleMatch = nil
@@ -18,19 +20,13 @@ end
 ---@param player table @The player to be inspected
 function PlayerVehicleTracker:checkForVehicleBelow(player)
 
+    -- Handle only the own player on each client
     if not player.isClient or player ~= g_currentMission.player then return end
 
-    -- If the player is not active as a person in the map, e.g. because they are sitting inside a vehicle, stop tracking
-    if not player.isEntered then
-        if player.trackedVehicle ~= nil then
-            dbgPrint(("Player ID %d is no longer tracking vehicle ID %d since player.isEntered = false"):format(player.id, player.trackedVehicle.id))
-            player.trackedVehicle = nil
-            player.trackedVehicleCoords = nil
-            player.desiredGlobalPos = nil
-            player.vehicleDirectionVector = nil
-        end
-        return
-    end
+    -- Check if the player is active in the game or sitting in a vehicle (or other reasons not to be "entered")
+    self.mainStateMachine:onPlayerIsEnteredStateUpdated(player.isEntered)
+    if not player.isEntered then return end
+    -- TOOD maybe split INACTIVE into two states (NO_PLAYER and INACTIVE, for example)
 
     -- Find the first vehicle below the player
     self.lastVehicleMatch = nil
@@ -38,49 +34,49 @@ function PlayerVehicleTracker:checkForVehicleBelow(player)
     local maxDistance = 2
     raycastAll(playerWorldX, playerWorldY, playerWorldZ, 0,-1,0, "vehicleRaycastCallback", maxDistance, self, CollisionMask.VEHICLE)
 
-    -- Remember data about the matched location (if any)
+    -- Update the state machine
+    local trackedVehicle = nil
     if self.lastVehicleMatch ~= nil then
-        local isStillTheSameVehicle = player.trackedVehicle ~= nil and player.trackedVehicle.id == self.lastVehicleMatch.object.id
-        if not isStillTheSameVehicle then
-            dbgPrint(("Player ID %d is now tracking vehicle ID %d"):format(player.id, self.lastVehicleMatch.object.id))
-        end
-        -- Find the local coordinates of the vehicle at the matched location
-        local xVehicle, yVehicle, zVehicle = worldToLocal(self.lastVehicleMatch.object.rootNode, self.lastVehicleMatch.x, self.lastVehicleMatch.y, self.lastVehicleMatch.z)
-        player.trackedVehicle = self.lastVehicleMatch.object
-        if not isStillTheSameVehicle or player.isMoving then
-            -- Only update the tracking location if the player is moving or if this is the first call for this vehicle.
-            -- While the player is stationary, these coordinates mustn't be changed.
-            dbgPrint("Updating tracked vehicle coordinates")
-            player.trackedVehicleCoords = { x = xVehicle, y = yVehicle, z = zVehicle }
-            player.desiredGlobalPos = nil
-            player.vehicleDirectionVector = nil
-        elseif player.trackedVehicle.isMoving then
-            dbgPrint("Updating desired global pos since player is locked and not moving, but the vehicle is moving")
-            local desiredGlobalPos = {}
-            desiredGlobalPos.x, desiredGlobalPos.y, desiredGlobalPos.z =
-                localToWorld(player.trackedVehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y + player.model.capsuleTotalHeight * 0.5, player.trackedVehicleCoords.z)
-            if player.desiredGlobalPos ~= nil then
-                player.vehicleDirectionVector = {
-                    x = desiredGlobalPos.x - player.desiredGlobalPos.x,
-                    y = desiredGlobalPos.y - player.desiredGlobalPos.y,
-                    z = desiredGlobalPos.z - player.desiredGlobalPos.z
-                }
-            end
-            player.desiredGlobalPos = desiredGlobalPos
-        else
-            -- Neither player or vehicle are moving; nothing to do
-            player.desiredGlobalPos = nil
-            player.vehicleDirectionVector = nil
-        end
-    else
-        if player.trackedVehicle ~= nil then
-            dbgPrint(("Player ID %d is no longer tracking vehicle ID %d since they are no longer on the vehicle"):format(player.id, player.trackedVehicle.id))
-            player.trackedVehicle = nil
-            player.trackedVehicleCoords = nil
-            player.desiredGlobalPos = nil
-            player.vehicleDirectionVector = nil
-        end
+        trackedVehicle = self.lastVehicleMatch.object
     end
+    self.mainStateMachine:onVehicleBelowPlayerUpdated(trackedVehicle)
+
+    -- Depending on the state, do different things:
+    -- If there is no vehicle below the player, or neither player nor vehicle are moving, nothing has to be done
+    -- If there is a vehicle, and only the player is moving: Update the tracked vehicle coordinates
+    -- If there is a vehicle, and only the vehicle is moving: Calculate the desired player position/movement vector based on where the tracked vehicle coordinates are now
+    -- If both are moving, update the tracked vehicle coordinates, but also add the direction vector
+    local state = self.mainStateMachine.state
+
+    if state == StickyFeetStateMachine.STATES.PLAYER_MOVING or state == StickyFeetStateMachine.STATES.BOTH_MOVING then
+        dbgPrint("Updating tracked vehicle coordinates")
+        local xVehicle, yVehicle, zVehicle = worldToLocal(self.lastVehicleMatch.object.rootNode, self.lastVehicleMatch.x, self.lastVehicleMatch.y, self.lastVehicleMatch.z)
+        player.trackedVehicleCoords = { x = xVehicle, y = yVehicle, z = zVehicle }
+    end
+
+    if (state == StickyFeetStateMachine.STATES.VEHICLE_MOVING and player.trackedVehicleCoords ~= nil) or state == StickyFeetStateMachine.STATES.BOTH_MOVING then
+        dbgPrint("Updating desired global pos and direction vector")
+        local desiredGlobalPos = {}
+        desiredGlobalPos.x, desiredGlobalPos.y, desiredGlobalPos.z =
+            localToWorld(self.mainStateMachine.trackedVehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y + player.model.capsuleTotalHeight * 0.5, player.trackedVehicleCoords.z)
+        if player.desiredGlobalPos ~= nil then
+            player.vehicleDirectionVector = {
+                x = desiredGlobalPos.x - player.desiredGlobalPos.x,
+                y = desiredGlobalPos.y - player.desiredGlobalPos.y,
+                z = desiredGlobalPos.z - player.desiredGlobalPos.z
+            }
+        else
+            local currentX, currentY, currentZ = localToWorld(player.rootNode, 0,0,0)
+            player.vehicleDirectionVector = {
+                x = desiredGlobalPos.x - currentX,
+                y = desiredGlobalPos.y - currentY,
+                z = desiredGlobalPos.z - currentZ
+            }
+        end
+        player.desiredGlobalPos = desiredGlobalPos
+    end
+
+    -- Nothing to do in IDLE or INACTIVE states
 end
 
 ---This is called by the game engine when an object which matches the VEHICLE collision mask was found below the player

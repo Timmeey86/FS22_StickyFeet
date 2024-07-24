@@ -5,9 +5,11 @@ PlayerLockHandler = {}
 local PlayerLockHandler_mt = Class(PlayerLockHandler)
 
 ---Creates a new object which locks the player in place while they are above a vehicle and not moving, and adjusts their speed when moving above a vehicle
+---@param mainStateMachine table @The main state machine of the mod
 ---@return table @The new instance
-function PlayerLockHandler.new()
+function PlayerLockHandler.new(mainStateMachine)
     local self = setmetatable({}, PlayerLockHandler_mt)
+    self.mainStateMachine = mainStateMachine
     return self
 end
 
@@ -16,8 +18,13 @@ end
 ---@param player table @The player to be handled
 function PlayerLockHandler:adjustPlayerPositionIfNecessary(player)
 
-    -- Add the direction change of the vehicle to the player movement in all cases
-    if player.vehicleDirectionVector ~= nil and player.trackedVehicle.isMoving and player.id == g_currentMission.player.id then
+    if not player.isClient or player.id ~= g_currentMission.player.id then
+        -- TODO Multiplayer
+        return
+    end
+
+    -- As long as the vehicle is moving, add the direction vector (no matter if the player is stationary or not)
+    if self.mainStateMachine.state == StickyFeetStateMachine.STATES.VEHICLE_MOVING or self.mainStateMachine.state == StickyFeetStateMachine.STATES.BOTH_MOVING then
         local directionVector = player.vehicleDirectionVector
         if player.movementCorrection == nil then
             -- No movement correction pending, just store the vector
@@ -30,6 +37,8 @@ function PlayerLockHandler:adjustPlayerPositionIfNecessary(player)
                 z = player.movementCorrection.z + directionVector.z
             }
         end
+    else
+        player.movementCorrection = nil
     end
 end
 
