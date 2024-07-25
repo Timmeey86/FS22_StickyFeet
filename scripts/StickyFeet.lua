@@ -25,27 +25,9 @@ end
 Mission00.loadMission00Finished = Utils.appendedFunction(Mission00.loadMission00Finished, function(...)
 
     -- Track player movement and vehicle below player
-    Player.update = Utils.appendedFunction(Player.update, function(player, ...)
+    Player.update = Utils.appendedFunction(Player.update, function(player, dt)
         playerMovementStateMachine:checkMovementState(player)
-        playerVehicleTracker:checkForVehicleBelow(player)
-
-        local pX,pY,pZ = localToWorld(player.rootNode, 0, 0, 0)
-        local gfxX, gfxY, gfxZ = localToWorld(player.graphicsRootNode, 0, 0, 0)
-        
-        if player.desiredGlobalPos ~= nil then
-            local playerNodeDiff = {
-                x = player.desiredGlobalPos.x - pX,
-                y = player.desiredGlobalPos.y - pY,
-                z = player.desiredGlobalPos.z - pZ
-            }
-            local gfxNodeDiff = {
-                x = gfxX - pX,
-                y = gfxY - pY,
-                z = gfxZ - pZ
-            }
-            print(("Player to Desired Pos offset is %.3f, %.3f, %.3f"):format(playerNodeDiff.x, playerNodeDiff.y, playerNodeDiff.z))
-            print(("Gfx to Player Pos offset is %.3f, %.3f, %.3f"):format(gfxNodeDiff.x, gfxNodeDiff.y, gfxNodeDiff.z))
-        end
+        playerVehicleTracker:checkForVehicleBelow(player, dt)
     end)
     Player.writeUpdateStream = Utils.appendedFunction(Player.writeUpdateStream, function(player, streamId, connection, dirtyMask)
         playerMovementStateMachine:after_player_writeUpdateStream(player, streamId, connection, dirtyMask)

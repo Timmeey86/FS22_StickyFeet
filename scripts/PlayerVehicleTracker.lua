@@ -18,7 +18,8 @@ end
 
 ---Updates internal states based on whether or not a vehicle is below that player.
 ---@param player table @The player to be inspected
-function PlayerVehicleTracker:checkForVehicleBelow(player)
+---@param dt number @The time delta since the previous call
+function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
 
     -- Handle only the own player on each client
     if not player.isClient or player ~= g_currentMission.player then return end
@@ -54,19 +55,33 @@ function PlayerVehicleTracker:checkForVehicleBelow(player)
         player.trackedVehicleCoords = { x = xVehicle, y = yVehicle, z = zVehicle }
     end
 
-    if (state == StickyFeetStateMachine.STATES.VEHICLE_MOVING and player.trackedVehicleCoords ~= nil) or state == StickyFeetStateMachine.STATES.BOTH_MOVING then
-        dbgPrint("Moving player to target location")
-        local x,y,z =
-            localToWorld(self.mainStateMachine.trackedVehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y + player.model.capsuleTotalHeight * 0.5, player.trackedVehicleCoords.z)
-        -- Teleport the player
-        player:moveToAbsoluteInternal(x,y,z)
-        -- Fix grahpics node position (moveToAbsoluteInternal puts it in the same spot as the root node while it must be half a player height below that)
-        setTranslation(player.graphicsRootNode, x,y - player.model.capsuleTotalHeight / 2,z)
-    end
+    if self.mainStateMachine.trackedVehicle ~= nil and player.trackedVehicleCoords ~= nil then
+        local targetX,targetY,targetZ = localToWorld(self.mainStateMachine.trackedVehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y + player.model.capsuleTotalHeight * 0.5, player.trackedVehicleCoords.z)
 
-    -- TODO: In BOTH_MOVING, move the player first, then update the tracked vehicle coordinates to the new player position
-    if state == StickyFeetStateMachine.STATES.BOTH_MOVING then
-        print(("%.3f/%.3f/%.3f"):format(player.motionInformation.currentSpeedX, player.motionInformation.currentSpeedY, player.motionInformation.currentSpeedZ))
+        if (state == StickyFeetStateMachine.STATES.VEHICLE_MOVING and player.trackedVehicleCoords ~= nil) then
+            dbgPrint("Moving player to target location")
+            -- Teleport the player
+            player:moveToAbsoluteInternal(targetX,targetY,targetZ)
+            -- Fix grahpics node position (moveToAbsoluteInternal puts it in the same spot as the root node while it must be half a player height below that)
+            setTranslation(player.graphicsRootNode, targetX, targetY - player.model.capsuleTotalHeight / 2, targetZ)
+        end
+
+        if state == StickyFeetStateMachine.STATES.BOTH_MOVING then
+            -- Calculate the desired player movement
+            local desiredSpeed = player:getDesiredSpeed()
+            local dtInSeconds = dt * 0.001
+            local desiredSpeedX = player.motionInformation.currentWorldDirX * desiredSpeed * dtInSeconds
+            local desiredSpeedZ = player.motionInformation.currentWorldDirZ * desiredSpeed * dtInSeconds
+            -- Calculate the target world coordinates
+            targetX = targetX + desiredSpeedX
+            targetZ = targetZ + desiredSpeedZ
+            -- Move the player to those coordinates
+            setTranslation(player.rootNode, targetX, targetY, targetZ)
+            setTranslation(player.graphicsRootNode, targetX, targetY - player.model.capsuleTotalHeight / 2, targetZ)
+            -- Update the tracked veehicle coordinates
+            local xVehicle, yVehicle, zVehicle = worldToLocal(self.mainStateMachine.trackedVehicle.rootNode, targetX, targetY, targetZ)
+            player.trackedVehicleCoords = { x = xVehicle, y = player.trackedVehicleCoords.y, z = zVehicle }
+        end
     end
 
     -- Nothing to do in IDLE or INACTIVE states
