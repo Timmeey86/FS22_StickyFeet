@@ -29,7 +29,6 @@ The following features are still buggy:
         <sourceFile filename="scripts/StickyFeetStateMachine.lua" />
         <sourceFile filename="scripts/PlayerVehicleTracker.lua" />
         <sourceFile filename="scripts/VehicleMovementTracker.lua" />
-        <sourceFile filename="scripts/PlayerLockHandler.lua" />
         <sourceFile filename="scripts/PlayerMovementStateMachine.lua" />
         <sourceFile filename="scripts/StickyFeet.lua" />
     </extraSourceFiles>

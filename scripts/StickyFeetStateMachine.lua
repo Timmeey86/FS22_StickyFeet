@@ -74,8 +74,9 @@ function StickyFeetStateMachine:onVehicleBelowPlayerUpdated(trackedVehicle)
         self:onVehicleMovementUpdated(self.trackedVehicle, self.vehicleIsMoving)
         self:printState()
     elseif trackedVehicle == nil then
+        local printState = self.state ~= StickyFeetStateMachine.STATES.INACTIVE
         self.state = StickyFeetStateMachine.STATES.INACTIVE
-        self:printState()
+        if printState then self:printState() end
     -- else: remain in same state
     end
     self.trackedVehicle = trackedVehicle

@@ -48,32 +48,25 @@ function PlayerVehicleTracker:checkForVehicleBelow(player)
     -- If both are moving, update the tracked vehicle coordinates, but also add the direction vector
     local state = self.mainStateMachine.state
 
-    if state == StickyFeetStateMachine.STATES.PLAYER_MOVING or state == StickyFeetStateMachine.STATES.BOTH_MOVING then
+    if state == StickyFeetStateMachine.STATES.PLAYER_MOVING then
         dbgPrint("Updating tracked vehicle coordinates")
         local xVehicle, yVehicle, zVehicle = worldToLocal(self.lastVehicleMatch.object.rootNode, self.lastVehicleMatch.x, self.lastVehicleMatch.y, self.lastVehicleMatch.z)
         player.trackedVehicleCoords = { x = xVehicle, y = yVehicle, z = zVehicle }
     end
 
     if (state == StickyFeetStateMachine.STATES.VEHICLE_MOVING and player.trackedVehicleCoords ~= nil) or state == StickyFeetStateMachine.STATES.BOTH_MOVING then
-        dbgPrint("Updating desired global pos and direction vector")
-        local desiredGlobalPos = {}
-        desiredGlobalPos.x, desiredGlobalPos.y, desiredGlobalPos.z =
+        dbgPrint("Moving player to target location")
+        local x,y,z =
             localToWorld(self.mainStateMachine.trackedVehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y + player.model.capsuleTotalHeight * 0.5, player.trackedVehicleCoords.z)
-        if player.desiredGlobalPos ~= nil then
-            player.vehicleDirectionVector = {
-                x = desiredGlobalPos.x - player.desiredGlobalPos.x,
-                y = desiredGlobalPos.y - player.desiredGlobalPos.y,
-                z = desiredGlobalPos.z - player.desiredGlobalPos.z
-            }
-        else
-            local currentX, currentY, currentZ = localToWorld(player.rootNode, 0,0,0)
-            player.vehicleDirectionVector = {
-                x = desiredGlobalPos.x - currentX,
-                y = desiredGlobalPos.y - currentY,
-                z = desiredGlobalPos.z - currentZ
-            }
-        end
-        player.desiredGlobalPos = desiredGlobalPos
+        -- Teleport the player
+        player:moveToAbsoluteInternal(x,y,z)
+        -- Fix grahpics node position (moveToAbsoluteInternal puts it in the same spot as the root node while it must be half a player height below that)
+        setTranslation(player.graphicsRootNode, x,y - player.model.capsuleTotalHeight / 2,z)
+    end
+
+    -- TODO: In BOTH_MOVING, move the player first, then update the tracked vehicle coordinates to the new player position
+    if state == StickyFeetStateMachine.STATES.BOTH_MOVING then
+        print(("%.3f/%.3f/%.3f"):format(player.motionInformation.currentSpeedX, player.motionInformation.currentSpeedY, player.motionInformation.currentSpeedZ))
     end
 
     -- Nothing to do in IDLE or INACTIVE states
@@ -102,7 +95,7 @@ function PlayerVehicleTracker:vehicleRaycastCallback(potentialVehicleId, x, y, z
 end
 
 function PlayerVehicleTracker:after_player_writeUpdateStream(player, streamId, connection, dirtyMask)
-    -- Send vehicle tracking data only for the own player on each client
+    --[[-- Send vehicle tracking data only for the own player on each client
     local positionNeedsToBeAdjusted = player.desiredGlobalPos ~= nil and player.trackedVehicle ~= nil and player.trackedVehicleCoords ~= nil
     streamWriteBool(streamId, positionNeedsToBeAdjusted)
     if positionNeedsToBeAdjusted then
@@ -112,11 +105,11 @@ function PlayerVehicleTracker:after_player_writeUpdateStream(player, streamId, c
        streamWriteFloat32(streamId, player.trackedVehicleCoords.x)
        streamWriteFloat32(streamId, player.trackedVehicleCoords.y)
        streamWriteFloat32(streamId, player.trackedVehicleCoords.z)
-    end
+    end]]--
 end
 
 function PlayerVehicleTracker:after_player_readUpdateStream(player, streamId, timestamp, connection)
-    local positionNeedsToBeAdjusted = streamReadBool(streamId)
+    --[[local positionNeedsToBeAdjusted = streamReadBool(streamId)
     if positionNeedsToBeAdjusted then
         -- Due to when player data is being written, this should only ever be called for other players on the client, and for all players on the dedi server
         if player == g_currentMission.player then
@@ -134,5 +127,5 @@ function PlayerVehicleTracker:after_player_readUpdateStream(player, streamId, ti
         player.desiredGlobalPos.x, player.desiredGlobalPos.y, player.desiredGlobalPos.z =
             localToWorld(player.trackedVehicle.rootNode, trackedVehicleCoords.x, trackedVehicleCoords.y, trackedVehicleCoords.z)
         -- The position will be applied through PlayerLockhandler
-    end
+    end]]--
 end

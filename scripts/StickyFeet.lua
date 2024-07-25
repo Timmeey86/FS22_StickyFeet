@@ -7,7 +7,6 @@ local mainStateMachine = StickyFeetStateMachine.new()
 local playerVehicleTracker = PlayerVehicleTracker.new(mainStateMachine)
 local vehicleMovementTracker = VehicleMovementTracker.new(mainStateMachine)
 local playerMovementStateMachine = PlayerMovementStateMachine.new(mainStateMachine)
-local playerLockHandler = PlayerLockHandler.new(mainStateMachine)
 local debugSwitch = false
 function dbgPrint(text)
     if debugSwitch then
@@ -29,7 +28,6 @@ Mission00.loadMission00Finished = Utils.appendedFunction(Mission00.loadMission00
     Player.update = Utils.appendedFunction(Player.update, function(player, ...)
         playerMovementStateMachine:checkMovementState(player)
         playerVehicleTracker:checkForVehicleBelow(player)
-        playerLockHandler:adjustPlayerPositionIfNecessary(player)
 
         local pX,pY,pZ = localToWorld(player.rootNode, 0, 0, 0)
         local gfxX, gfxY, gfxZ = localToWorld(player.graphicsRootNode, 0, 0, 0)
@@ -56,9 +54,6 @@ Mission00.loadMission00Finished = Utils.appendedFunction(Mission00.loadMission00
     Player.readUpdateStream = Utils.appendedFunction(Player.readUpdateStream, function(player, streamId, timestamp, connection)
         playerMovementStateMachine:after_player_readUpdateStream(player, streamId, timestamp, connection)
         playerVehicleTracker:after_player_readUpdateStream(player, streamId, timestamp, connection)
-    end)
-    Player.movePlayer = Utils.overwrittenFunction(Player.movePlayer, function(player, superFunc, dt, movementX, movementY, movementZ)
-        playerLockHandler:instead_of_player_movePlayer(player, superFunc, dt, movementX, movementY, movementZ)
     end)
 
     -- Track vehicle movement
