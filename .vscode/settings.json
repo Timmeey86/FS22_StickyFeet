@@ -31,6 +31,16 @@
         "g_server",
         "Logging",
         "raycastAll",
-        "MathUtil"
+        "MathUtil",
+        "FSBaseMission",
+        "addModEventListener",
+        "removeModEventListener",
+        "Input",
+        "source",
+        "fileExists",
+        "g_movementBehavior",
+        "getLinearDamping",
+        "setLinearDamping",
+        "moveCCT"
     ]
 }

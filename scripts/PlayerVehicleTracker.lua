@@ -5,77 +5,106 @@ PlayerVehicleTracker = {}
 local PlayerVehicleTracker_mt = Class(PlayerVehicleTracker)
 
 ---Creates a new object which keeps track of which player is above which vehicle
+---@param mainStateMachine table @The main state machine of the mod
 ---@return table @The new instance
-function PlayerVehicleTracker.new()
+function PlayerVehicleTracker.new(mainStateMachine)
     local self = setmetatable({}, PlayerVehicleTracker_mt)
+    self.mainStateMachine = mainStateMachine
 
     -- The current vehicle which was found by the algorithm. This is only valid temporarily
     self.lastVehicleMatch = nil
     return self
 end
 
----Updates internal states based on whether or not a vehicle is below that player.
----@param player table @The player to be inspected
-function PlayerVehicleTracker:after_player_updateTick(player)
-
-    if not player.isClient or player ~= g_currentMission.player then return end
-
-    -- If the player is not active as a person in the map, e.g. because they are sitting inside a vehicle, stop tracking
-    if not player.isEntered then
-        if player.trackedVehicle ~= nil then
-            dbgPrint(("Player ID %d is no longer tracking vehicle ID %d since player.isEntered = false"):format(player.id, player.trackedVehicle.id))
-            player.trackedVehicle = nil
-            player.trackedVehicleCoords = nil
-            player.desiredGlobalPos = nil
-        end
-        return
-    end
-
+---Finds the first vehicle below the given location
+---@param x number @the X coordinate
+---@param y number @the Y coordinate
+---@param z number @the Z coordinate
+function PlayerVehicleTracker:updateTrackedVehicleAt(x,y,z)
     -- Find the first vehicle below the player
     self.lastVehicleMatch = nil
-    local playerWorldX, playerWorldY, playerWorldZ = player:getPositionData()
     local maxDistance = 2
-    raycastAll(playerWorldX, playerWorldY, playerWorldZ, 0,-1,0, "vehicleRaycastCallback", maxDistance, self, CollisionMask.VEHICLE)
+    raycastAll(x, y + 0.05, z, 0,-1,0, "vehicleRaycastCallback", maxDistance, self, CollisionMask.VEHICLE)
 
-    -- Remember data about the matched location (if any)
+    -- Update the state machine
+    local trackedVehicle = nil
     if self.lastVehicleMatch ~= nil then
-        local isStillTheSameVehicle = player.trackedVehicle ~= nil and player.trackedVehicle.id == self.lastVehicleMatch.object.id
-        if not isStillTheSameVehicle then
-            dbgPrint(("Player ID %d is now tracking vehicle ID %d"):format(player.id, self.lastVehicleMatch.object.id))
+        trackedVehicle = self.lastVehicleMatch.object
+    end
+    self.mainStateMachine:onVehicleBelowPlayerUpdated(trackedVehicle)
+end
+
+---Updates the local coordinates of the vehicle which shall be tracked based on the previous vehicle match
+---@param player table @The player
+function PlayerVehicleTracker:updateTrackedLocation(player)
+    dbgPrint("Updating tracked vehicle coordinates")
+    local xVehicle, yVehicle, zVehicle = worldToLocal(self.lastVehicleMatch.object.rootNode, self.lastVehicleMatch.x, self.lastVehicleMatch.y, self.lastVehicleMatch.z)
+    player.trackedVehicleCoords = { x = xVehicle, y = yVehicle, z = zVehicle }
+end
+---Updates internal states based on whether or not a vehicle is below that player.
+---@param player table @The player to be inspected
+---@param dt number @The time delta since the previous call
+function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
+
+    -- Handle only the own player on each client
+    if not player.isClient or player ~= g_currentMission.player then return end
+
+    -- Check if the player is active in the game or sitting in a vehicle (or other reasons not to be "entered")
+    self.mainStateMachine:onPlayerIsEnteredStateUpdated(player.isEntered)
+    if not player.isEntered then return end
+    -- TOOD maybe split INACTIVE into two states (NO_PLAYER and INACTIVE, for example)
+
+    -- Find the first vehicle below the player
+    local playerWorldX, playerWorldY, playerWorldZ = player:getPositionData()
+    self:updateTrackedVehicleAt(playerWorldX, playerWorldY, playerWorldZ)
+
+    -- Depending on the state, do different things:
+    -- If there is no vehicle below the player, or neither player nor vehicle are moving, nothing has to be done
+    -- If there is a vehicle, and only the player is moving: Update the tracked vehicle coordinates
+    -- If there is a vehicle, and only the vehicle is moving: Drag the player along with the vehicle so that they stick to the tracked location on the vehicle
+    -- If both are moving, add the player movement vector to the vehicle vector and move the player to that calculated location
+    local state = self.mainStateMachine.state
+
+    if state == StickyFeetStateMachine.STATES.PLAYER_MOVING then
+        self:updateTrackedLocation(player)
+    end
+
+    if self.mainStateMachine.trackedVehicle ~= nil and player.trackedVehicleCoords ~= nil then
+        local targetX,targetY,targetZ = localToWorld(self.mainStateMachine.trackedVehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y, player.trackedVehicleCoords.z)
+
+        if (state == StickyFeetStateMachine.STATES.VEHICLE_MOVING and player.trackedVehicleCoords ~= nil) then
+            dbgPrint("Moving player to target location")
+            -- Teleport the player
+            player:moveToAbsoluteInternal(targetX,targetY + player.model.capsuleTotalHeight * 0.5,targetZ)
+            -- Fix graphics node position (moveToAbsoluteInternal puts it in the same spot as the root node while it must be half a player height below that)
+            setTranslation(player.graphicsRootNode, targetX, targetY, targetZ)
         end
-        -- Find the local coordinates of the vehicle at the matched location
-        local xVehicle, yVehicle, zVehicle = worldToLocal(self.lastVehicleMatch.object.rootNode, self.lastVehicleMatch.x, self.lastVehicleMatch.y, self.lastVehicleMatch.z)
-        player.trackedVehicle = self.lastVehicleMatch.object
-        if not isStillTheSameVehicle or player.isMoving then
-            -- Only update the tracking location if the player is moving or if this is the first call for this vehicle.
-            -- While the player is stationary, these coordinates mustn't be changed.
-            dbgPrint("Updating tracked vehicle coordinates")
-            player.trackedVehicleCoords = { x = xVehicle, y = yVehicle, z = zVehicle }
-            player.desiredGlobalPos = nil
-        elseif player.trackedVehicle.isMoving then
-            if not player.wasAlreadyMoving then
-                dbgPrint("Updating desired global pos since player is locked and not moving, but the vehicle is moving")
-                local desiredGlobalPos = {}
-                desiredGlobalPos.x, desiredGlobalPos.y, desiredGlobalPos.z =
-                    localToWorld(player.trackedVehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y, player.trackedVehicleCoords.z)
-                player.desiredGlobalPos = desiredGlobalPos
-            else
-                -- The player has just stopped moving. Ignore this update as they would otherwise zap around a bit
-                player.wasAlreadyMoving = false
+
+        if state == StickyFeetStateMachine.STATES.BOTH_MOVING then
+            -- Calculate the desired player movement
+            local desiredSpeed = player:getDesiredSpeed()
+            local dtInSeconds = dt * 0.001
+            local desiredSpeedX = player.motionInformation.currentWorldDirX * desiredSpeed * dtInSeconds
+            local desiredSpeedZ = player.motionInformation.currentWorldDirZ * desiredSpeed * dtInSeconds
+            -- Calculate the target world coordinates
+            targetX = targetX + desiredSpeedX
+            targetZ = targetZ + desiredSpeedZ
+            -- Find the vehicle at those coordinates in order to be able to obtain a new target Y value (in case the vehicle is moving uphill or downhill)
+            self:updateTrackedVehicleAt(targetX, targetY + 0.2, targetZ)
+            -- Note: if that location is no longer above a vehicle, the state machine will be in an INACTIVE state now
+            if self.mainStateMachine.state == StickyFeetStateMachine.STATES.BOTH_MOVING then
+                -- Remember the new tracked location
+                self:updateTrackedLocation(player)
+                -- Convert to new world coordinates
+                targetX,targetY,targetZ = localToWorld(self.mainStateMachine.trackedVehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y, player.trackedVehicleCoords.z)
             end
-        else
-            -- Neither player or vehicle are moving; nothing to do
-            player.desiredGlobalPos = nil
-            player.wasAlreadyMoving = false
-        end
-    else
-        if player.trackedVehicle ~= nil then
-            dbgPrint(("Player ID %d is no longer tracking vehicle ID %d since they are no longer on the vehicle"):format(player.id, player.trackedVehicle.id))
-            player.trackedVehicle = nil
-            player.trackedVehicleCoords = nil
-            player.desiredGlobalPos = nil
+            -- Move the player to those coordinates (even if the state machine is INACTIVE since the player could otherwise not leave the vehicle)
+            setTranslation(player.rootNode, targetX, targetY + player.model.capsuleTotalHeight * 0.5, targetZ)
+            setTranslation(player.graphicsRootNode, targetX, targetY, targetZ)
         end
     end
+
+    -- Nothing to do in IDLE or INACTIVE states
 end
 
 ---This is called by the game engine when an object which matches the VEHICLE collision mask was found below the player
@@ -101,7 +130,7 @@ function PlayerVehicleTracker:vehicleRaycastCallback(potentialVehicleId, x, y, z
 end
 
 function PlayerVehicleTracker:after_player_writeUpdateStream(player, streamId, connection, dirtyMask)
-    -- Send vehicle tracking data only for the own player on each client
+    --[[-- Send vehicle tracking data only for the own player on each client
     local positionNeedsToBeAdjusted = player.desiredGlobalPos ~= nil and player.trackedVehicle ~= nil and player.trackedVehicleCoords ~= nil
     streamWriteBool(streamId, positionNeedsToBeAdjusted)
     if positionNeedsToBeAdjusted then
@@ -111,11 +140,11 @@ function PlayerVehicleTracker:after_player_writeUpdateStream(player, streamId, c
        streamWriteFloat32(streamId, player.trackedVehicleCoords.x)
        streamWriteFloat32(streamId, player.trackedVehicleCoords.y)
        streamWriteFloat32(streamId, player.trackedVehicleCoords.z)
-    end
+    end]]--
 end
 
 function PlayerVehicleTracker:after_player_readUpdateStream(player, streamId, timestamp, connection)
-    local positionNeedsToBeAdjusted = streamReadBool(streamId)
+    --[[local positionNeedsToBeAdjusted = streamReadBool(streamId)
     if positionNeedsToBeAdjusted then
         -- Due to when player data is being written, this should only ever be called for other players on the client, and for all players on the dedi server
         if player == g_currentMission.player then
@@ -133,5 +162,5 @@ function PlayerVehicleTracker:after_player_readUpdateStream(player, streamId, ti
         player.desiredGlobalPos.x, player.desiredGlobalPos.y, player.desiredGlobalPos.z =
             localToWorld(player.trackedVehicle.rootNode, trackedVehicleCoords.x, trackedVehicleCoords.y, trackedVehicleCoords.z)
         -- The position will be applied through PlayerLockhandler
-    end
+    end]]--
 end
