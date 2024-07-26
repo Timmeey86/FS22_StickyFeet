@@ -54,9 +54,9 @@ function PlayerVehicleTracker:forceMovePlayer(player, x, y, z)
         local xl, yl, zl = worldToLocal(self.mainStateMachine.trackedVehicle.rootNode, x, y, z)
         -- Synchronize the local coordinates to other network participants since by the time they receive the update, the global coordinates will be wrong already
         player.forceMoveVehicle = self.mainStateMachine.trackedVehicle
-        player.forceMoveLocalCoords = {xl, yl, zl}
-    else
-        Logging.warning(MOD_NAME .. ": Player was force moved without a tracked vehicle. This should not happen.")
+        player.forceMoveLocalCoords = {x = xl, y = yl, z = zl}
+    -- else: Force moving without a tracked vehicle can happen when the player is leaving a vehicle
+    --       We don't need to send network data in that case since base game will handle that
     end
 end
 
@@ -97,10 +97,7 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
 
         if (state == StickyFeetStateMachine.STATES.VEHICLE_MOVING and player.trackedVehicleCoords ~= nil) then
             dbgPrint("Moving player to target location")
-            -- Teleport the player
-            player:moveToAbsoluteInternal(targetX,targetY + player.model.capsuleTotalHeight * 0.5,targetZ)
-            -- Fix graphics node position (moveToAbsoluteInternal puts it in the same spot as the root node while it must be half a player height below that)
-            setTranslation(player.graphicsRootNode, targetX, targetY, targetZ)
+            self:forceMovePlayer(player, targetX, targetY, targetZ)
         end
 
         if state == StickyFeetStateMachine.STATES.BOTH_MOVING then
@@ -122,9 +119,8 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
                 -- Convert to new world coordinates
                 targetX,targetY,targetZ = localToWorld(self.mainStateMachine.trackedVehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y, player.trackedVehicleCoords.z)
             end
-            -- Move the player to those coordinates (even if the state machine in NO_VEHICLE since the player could otherwise not leave the vehicle)
-            setTranslation(player.rootNode, targetX, targetY + player.model.capsuleTotalHeight * 0.5, targetZ)
-            setTranslation(player.graphicsRootNode, targetX, targetY, targetZ)
+            dbgPrint("Moving player to target location")
+            self:forceMovePlayer(player, targetX, targetY, targetZ)
         end
     end
 
@@ -162,8 +158,9 @@ function PlayerVehicleTracker:after_player_writeUpdateStream(player, streamId, c
     -- Send vehicle tracking data only for the own player on each client
     local forceMoveIsValid = player.forceMoveVehicle ~= nil
     if streamWriteBool(streamId, forceMoveIsValid) then
+        print("Sending target player position for player ID " .. tostring(player.id) .. " to the server")
         -- Transmit the reference of the tracked vehicle to other network participants (the ID is different on every client, but NetworkUtil seems to map that for us)
-        NetworkUtil.writeNodeObject(streamId, player.trackedVehicle)
+        NetworkUtil.writeNodeObject(streamId, player.forceMoveVehicle)
         -- distribute the player position in relation to the vehicle
         streamWriteFloat32(streamId, player.forceMoveLocalCoords.x)
         streamWriteFloat32(streamId, player.forceMoveLocalCoords.y)
@@ -176,6 +173,7 @@ end
 
 function PlayerVehicleTracker:after_player_readUpdateStream(player, streamId, timestamp, connection)
     if streamReadBool(streamId) then
+        print("Receiving player position for player ID " .. tostring(player.id))
         local vehicle = NetworkUtil.readNodeObject(streamId)
         local xl = streamReadFloat32(streamId)
         local yl = streamReadFloat32(streamId)
@@ -185,6 +183,8 @@ function PlayerVehicleTracker:after_player_readUpdateStream(player, streamId, ti
             local x,y,z = localToWorld(vehicle.rootNode, xl, yl, zl)
             setTranslation(player.rootNode, x, y + player.model.capsuleTotalHeight * 0.5, z)
             setTranslation(player.graphicsRootNode, x, y, z)
+        else
+            Logging.error(MOD_NAME .. ": Received invalid force movement data for player ID " .. tostring(player.id))
         end
     end
 end
