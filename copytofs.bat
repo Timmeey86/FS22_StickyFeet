@@ -1,2 +1,2 @@
 del -q "%USERPROFILE%\Documents\my games\FarmingSimulator2022\mods\FS22_StickyFeet.zip"
-robocopy . "%USERPROFILE%\Documents\my games\FarmingSimulator2022\mods\FS22_StickyFeet" /mir /XD ".git" ".vscode" ".VSCodeCounter" "screenshots" /XF "*.bat" "*.md" "LICENSE" ".gitignore" ".gitattributes" "DebugPlugin.lua"
+robocopy . "%USERPROFILE%\Documents\my games\FarmingSimulator2022\mods\FS22_StickyFeet" /mir /XD ".git" ".vscode" ".VSCodeCounter" "screenshots" "doc" /XF "*.bat" "*.md" "LICENSE" ".gitignore" ".gitattributes" "DebugPlugin.lua"

@@ -26,18 +26,17 @@ function PlayerMovementStateMachine:checkMovementState(player)
     -- Remarks: updateTick gets called on both server and client, with different player IDs, but the player states seem to always be false on the server
 
     if player.isClient and player == g_currentMission.player then
-        if player.isEntered and (
-               player.playerStateMachine.playerStateWalk.isActive
+        if player.playerStateMachine.playerStateWalk.isActive
             or player.playerStateMachine.playerStateRun.isActive
             or player.playerStateMachine.playerStateJump.isActive
-            or player.playerStateMachine.playerStateFall.isActive
-            or player.playerStateMachine.playerStateSwim.isActive)
-            then
+            or player.playerStateMachine.playerStateFall.isActive then
 
-            self:updateMovementState(true)
+            self.mainStateMachine:onPlayerMovementUpdated(true)
         else
-            self:updateMovementState(false)
+            self.mainStateMachine:onPlayerMovementUpdated(false)
         end
+        self.mainStateMachine:onPlayerJumpingStateUpdated(player.playerStateMachine.playerStateJump.isActive)
+        self.mainStateMachine:onPlayerFallingStateUpdated(player.playerStateMachine.playerStateFall.isActive)
     -- else: Server and other clients won't know the state machine state.
     end
 end
