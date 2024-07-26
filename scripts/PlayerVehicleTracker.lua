@@ -23,7 +23,7 @@ end
 function PlayerVehicleTracker:updateTrackedVehicleAt(x,y,z)
     -- Find the first vehicle below the player
     self.lastVehicleMatch = nil
-    local maxDistance = 2
+    local maxDistance = 5
     raycastAll(x, y + 0.05, z, 0,-1,0, "vehicleRaycastCallback", maxDistance, self, CollisionMask.VEHICLE)
 
     -- Update the state machine
@@ -51,8 +51,8 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
 
     -- Check if the player is active in the game or sitting in a vehicle (or other reasons not to be "entered")
     self.mainStateMachine:onPlayerIsEnteredStateUpdated(player.isEntered)
+    -- If the player is not enterd, they can by definition not be on a vehicle, so we can skip the remaining function
     if not player.isEntered then return end
-    -- TOOD maybe split INACTIVE into two states (NO_PLAYER and INACTIVE, for example)
 
     -- Find the first vehicle below the player
     local playerWorldX, playerWorldY, playerWorldZ = player:getPositionData()
@@ -65,11 +65,14 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
     -- If both are moving, add the player movement vector to the vehicle vector and move the player to that calculated location
     local state = self.mainStateMachine.state
 
-    if state == StickyFeetStateMachine.STATES.PLAYER_MOVING then
+    if self.mainStateMachine.trackedVehicle == nil then
+        player.trackedVehicleCoords = nil
+    elseif state == StickyFeetStateMachine.STATES.PLAYER_MOVING or player.trackedVehicleCoords == nil then
+        -- Note: Tracking a vehicle without coordinates can happen when falling onto a vehicle without transitioning through PLAYER_MOVING
         self:updateTrackedLocation(player)
     end
 
-    if self.mainStateMachine.trackedVehicle ~= nil and player.trackedVehicleCoords ~= nil then
+    if player.trackedVehicleCoords ~= nil then
         local targetX,targetY,targetZ = localToWorld(self.mainStateMachine.trackedVehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y, player.trackedVehicleCoords.z)
 
         if (state == StickyFeetStateMachine.STATES.VEHICLE_MOVING and player.trackedVehicleCoords ~= nil) then
@@ -91,20 +94,26 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
             targetZ = targetZ + desiredSpeedZ
             -- Find the vehicle at those coordinates in order to be able to obtain a new target Y value (in case the vehicle is moving uphill or downhill)
             self:updateTrackedVehicleAt(targetX, targetY + 0.2, targetZ)
-            -- Note: if that location is no longer above a vehicle, the state machine will be in an INACTIVE state now
-            if self.mainStateMachine.state == StickyFeetStateMachine.STATES.BOTH_MOVING then
+            state = self.mainStateMachine.state
+            -- Note: if that location is no longer above a vehicle, the state machine will be in a NO_VEHICLE state now
+            if state == StickyFeetStateMachine.STATES.BOTH_MOVING then
                 -- Remember the new tracked location
                 self:updateTrackedLocation(player)
                 -- Convert to new world coordinates
                 targetX,targetY,targetZ = localToWorld(self.mainStateMachine.trackedVehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y, player.trackedVehicleCoords.z)
             end
-            -- Move the player to those coordinates (even if the state machine is INACTIVE since the player could otherwise not leave the vehicle)
+            -- Move the player to those coordinates (even if the state machine in NO_VEHICLE since the player could otherwise not leave the vehicle)
             setTranslation(player.rootNode, targetX, targetY + player.model.capsuleTotalHeight * 0.5, targetZ)
             setTranslation(player.graphicsRootNode, targetX, targetY, targetZ)
         end
     end
 
-    -- Nothing to do in IDLE or INACTIVE states
+    if state == StickyFeetStateMachine.STATES.JUMPING_ABOVE_VEHICLE or state == StickyFeetStateMachine.STATES.FALLING_ABOVE_VEHICLE then
+        -- Stop tracking until the player has landed (too many issues otherwise)
+        player.trackedVehicleCoords = nil
+    end
+
+    -- Nothing to do in other states
 end
 
 ---This is called by the game engine when an object which matches the VEHICLE collision mask was found below the player
