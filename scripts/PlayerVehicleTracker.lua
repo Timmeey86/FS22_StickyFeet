@@ -66,7 +66,13 @@ end
 ---@param dt number @The time delta since the previous call
 function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
 
-    -- Handle only the own player on each client
+    -- Other players. Just move them along with the vehicle as long as that's possible
+    if player.syncedLockVehicle ~= nil then
+        local x,y,z = localToWorld(player.syncedLockVehicle.rootNode, player.syncedLockCoords.x, player.syncedLockCoords.y, player.syncedLockCoords.z)
+        player:moveToAbsoluteInternal(x, y + player.model.capsuleTotalHeight * 0.5, z)
+        setTranslation(player.graphicsRootNode, x, y, z)
+    end
+    -- Otherwise only handle the local client player
     if not player.isClient or player ~= g_currentMission.player then return end
 
     -- Check if the player is active in the game or sitting in a vehicle (or other reasons not to be "entered")
@@ -180,11 +186,13 @@ function PlayerVehicleTracker:after_player_readUpdateStream(player, streamId, ti
         local zl = streamReadFloat32(streamId)
 
         if vehicle ~= nil and xl ~= nil and yl ~= nil and zl ~= nil then
-            local x,y,z = localToWorld(vehicle.rootNode, xl, yl, zl)
-            player:moveToAbsoluteInternal(x, y + player.model.capsuleTotalHeight * 0.5, z)
-            setTranslation(player.graphicsRootNode, x, y, z)
+            player.syncedLockVehicle = vehicle
+            player.syncedLockCoords = { x = xl, y = yl, z = zl }
         else
             Logging.error(MOD_NAME .. ": Received invalid force movement data for player ID " .. tostring(player.id))
         end
+    else
+        player.syncedLockVehicle = nil
+        player.syncedLockCoords = nil
     end
 end
