@@ -51,15 +51,17 @@ end
 function StickyFeetStateMachine:onPlayerIsEnteredStateUpdated(isEntered)
     if not isEntered then
         -- if the player is not entered, all the internal flags are invalid and must be updated as soon as they are entered again
+        local printState = self.state ~= StickyFeetStateMachine.STATES.INACTIVE
         self:reset()
-        self:printState()
+        if printState then self:printState() end
     elseif self.state == StickyFeetStateMachine.STATES.INACTIVE then
         -- maybe transition to other states based on current flags
         -- usually, this would stay in INACTIVE, however
+        local wasInactive = self.state == StickyFeetStateMachine.STATES.INACTIVE
         self:onVehicleBelowPlayerUpdated(self.trackedVehicle)
         self:onPlayerMovementUpdated(self.playerIsMoving)
         self:onVehicleMovementUpdated(self.trackedVehicle, self.vehicleIsMoving)
-        self:printState()
+        if (self.state == StickyFeetStateMachine.STATES.INACTIVE) ~= wasInactive then self:printState() end
     -- else: Stay in current state
     end
 end
