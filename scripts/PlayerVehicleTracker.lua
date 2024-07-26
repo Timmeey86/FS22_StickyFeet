@@ -48,7 +48,7 @@ end
 ---@param y number @The Y coordinate of the target graphics root node position
 ---@param z number @The Z coordinate of the target graphics root node position
 function PlayerVehicleTracker:forceMovePlayer(player, x, y, z)
-    setTranslation(player.rootNode, x, y + player.model.capsuleTotalHeight * 0.5, z)
+    player:moveToAbsoluteInternal(x, y + player.model.capsuleTotalHeight * 0.5, z)
     setTranslation(player.graphicsRootNode, x, y, z)
     if self.mainStateMachine.trackedVehicle then
         local xl, yl, zl = worldToLocal(self.mainStateMachine.trackedVehicle.rootNode, x, y, z)
@@ -181,7 +181,7 @@ function PlayerVehicleTracker:after_player_readUpdateStream(player, streamId, ti
 
         if vehicle ~= nil and xl ~= nil and yl ~= nil and zl ~= nil then
             local x,y,z = localToWorld(vehicle.rootNode, xl, yl, zl)
-            setTranslation(player.rootNode, x, y + player.model.capsuleTotalHeight * 0.5, z)
+            player:moveToAbsoluteInternal(x, y + player.model.capsuleTotalHeight * 0.5, z)
             setTranslation(player.graphicsRootNode, x, y, z)
         else
             Logging.error(MOD_NAME .. ": Received invalid force movement data for player ID " .. tostring(player.id))
