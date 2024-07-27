@@ -20,7 +20,7 @@ local StickyFeetStateMachine_mt = Class(StickyFeetStateMachine)
 function StickyFeetStateMachine.new()
     local self = setmetatable({}, StickyFeetStateMachine_mt)
     self:reset()
-    self.vehicleMovingStates = {}
+    self.vehicleMovementStates = {}
     return self
 end
 
@@ -91,7 +91,7 @@ function StickyFeetStateMachine:onVehicleBelowPlayerUpdated(trackedVehicle)
     if triggerSubTransitions then
         -- maybe transition to other states based on current flags
         self:onPlayerMovementUpdated(self.playerIsMoving)
-        self:onVehicleMovementUpdated(self.trackedVehicle, self.vehicleIsMoving)
+        self:onVehicleMovementUpdated(self.trackedVehicle, self.vehicleMovementStates[self.trackedVehicle] or false)
         self:onPlayerJumpingStateUpdated(self.playerIsJumping)
         self:onPlayerFallingStateUpdated(self.playerIsFalling)
     end
@@ -129,7 +129,7 @@ function StickyFeetStateMachine:onVehicleMovementUpdated(vehicle, isMoving)
         return
     else
         -- Store the movement states for all vehicles in case the player 
-        self.vehicleMovingStates[vehicle] = isMoving
+        self.vehicleMovementStates[vehicle] = isMoving
     end
 
     -- Only update the state machine if the state of the tracked vehicle changes.
