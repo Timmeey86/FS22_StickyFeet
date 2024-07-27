@@ -45,6 +45,8 @@
         "getRotation",
         "setRotation",
         "renderText",
-        "localDirectionToWorld"
+        "localDirectionToWorld",
+        "CollisionFlag",
+        "Bale"
     ]
 }

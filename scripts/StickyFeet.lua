@@ -35,21 +35,3 @@ Mission00.loadMission00Finished = Utils.appendedFunction(Mission00.loadMission00
         vehicleMovementTracker:checkVehicle(vehicle)
     end)
 end)
-
-Player.draw = Utils.overwrittenFunction(Player.draw, function(player, superFunc)
-    superFunc(player)
-
-    DebugUtil.drawDebugNode(player.rootNode, "Player", false)
-    DebugUtil.drawDebugNode(player.graphicsRootNode, "GfxNode", false)
-    if player.trackedVehicleCoords ~= nil and mainStateMachine.trackedVehicle ~= nil then
-        local x,y,z = localToWorld(mainStateMachine.trackedVehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y, player.trackedVehicleCoords.z)
-        DebugUtil.drawDebugCircle(x, y, z, 0.05, 32, {1,0,0})
-    end
-    if player.desiredGlobalPos ~= nil then
-        DebugUtil.drawDebugCircle(player.desiredGlobalPos.x, player.desiredGlobalPos.y, player.desiredGlobalPos.z, 0.05, 32, {0,0,1})
-    end
-    if mainStateMachine.trackedVehicle ~= nil then
-        local vehicle = mainStateMachine.trackedVehicle
-        DebugUtil.drawDebugNode(vehicle.rootNode, "Vehicle", false)
-    end
-end)

@@ -21,10 +21,12 @@ end
 ---@param y number @the Y coordinate
 ---@param z number @the Z coordinate
 function PlayerVehicleTracker:updateTrackedVehicleAt(x,y,z)
-    -- Find the first vehicle below the player
+    -- Find the first vehicle below the player (that actually includes pallets)
     self.lastVehicleMatch = nil
+    self.lastObjectMatch = nil
     local maxDistance = 5
-    raycastAll(x, y + 0.05, z, 0,-1,0, "vehicleRaycastCallback", maxDistance, self, CollisionMask.VEHICLE)
+    local collisionMask = CollisionFlag.STATIC_OBJECT + CollisionFlag.DYNAMIC_OBJECT + CollisionFlag.VEHICLE + CollisionFlag.PLAYER
+    raycastAll(x, y + 0.05, z, 0,-1,0, "vehicleRaycastCallback", maxDistance, self, collisionMask)
 
     -- Update the state machine
     local trackedVehicle = nil
@@ -39,6 +41,14 @@ end
 function PlayerVehicleTracker:updateTrackedLocation(player)
     dbgPrint("Updating tracked vehicle coordinates")
     local xVehicle, yVehicle, zVehicle = worldToLocal(self.lastVehicleMatch.object.rootNode, self.lastVehicleMatch.x, self.lastVehicleMatch.y, self.lastVehicleMatch.z)
+    if self.lastObjectMatch ~= nil then
+        -- An object is between the player and the trailer. Use the top Y coordinate of that object instead of the trailer
+        local _, yObject, _ = worldToLocal(self.lastVehicleMatch.object.rootNode, self.lastObjectMatch.x, self.lastObjectMatch.y, self.lastObjectMatch.z)
+        if yObject > yVehicle then
+            -- Object is above the vehicle. Use the Y coordinate of the object
+            yVehicle = yObject
+        end
+    end
     player.trackedVehicleCoords = { x = xVehicle, y = yVehicle, z = zVehicle }
 end
 
@@ -84,6 +94,12 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
     local previousVehicle = self.mainStateMachine.trackedVehicle
     local playerWorldX, playerWorldY, playerWorldZ = player:getPositionData()
     self:updateTrackedVehicleAt(playerWorldX, playerWorldY, playerWorldZ)
+    if self.lastVehicleMatch ~= nil then
+        DebugUtil.drawDebugNode(self.lastVehicleMatch.object.rootNode, "lastVehicleMatch", false)
+    end
+    if self.lastObjectMatch ~= nil then
+        DebugUtil.drawDebugNode(self.lastObjectMatch.object.nodeId, "lastObjectMatch", false)
+    end
 
     -- Depending on the state, do different things:
     -- If there is no vehicle below the player, or neither player nor vehicle are moving, nothing has to be done
@@ -163,11 +179,13 @@ end
 function PlayerVehicleTracker:vehicleRaycastCallback(potentialVehicleId, x, y, z, distance)
     if potentialVehicleId ~= nil and potentialVehicleId ~= 0 then
         local object = g_currentMission:getNodeObject(potentialVehicleId)
-        if object ~= nil and object:isa(Vehicle) then
+        if object ~= nil and (object:isa(Vehicle)) then
             self.lastVehicleMatch = { object = object, x = x, y = y, z = z, distance = distance }
-
             -- Stop searching
             return false
+        elseif object ~= nil and self.lastObjectMatch == nil and (object:isa(Bale) or object:isa(Player)) then
+            self.lastObjectMatch = { object = object, x = x, y = y, z = z, distance = distance }
+            -- Continue searching anyway
         end
     end
 
