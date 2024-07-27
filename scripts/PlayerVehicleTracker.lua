@@ -81,6 +81,7 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
     if not player.isEntered then return end
 
     -- Find the first vehicle below the player
+    local previousVehicle = self.mainStateMachine.trackedVehicle
     local playerWorldX, playerWorldY, playerWorldZ = player:getPositionData()
     self:updateTrackedVehicleAt(playerWorldX, playerWorldY, playerWorldZ)
 
@@ -93,17 +94,30 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
 
     if self.mainStateMachine.trackedVehicle == nil then
         player.trackedVehicleCoords = nil
+        if previousVehicle ~= nil then
+            -- Reset rotation so it doesn't get used when the player hops on the same vehicle again
+            previousVehicle.previousRotation = nil
+        end
     elseif state == StickyFeetStateMachine.STATES.PLAYER_MOVING or player.trackedVehicleCoords == nil then
         -- Note: Tracking a vehicle without coordinates can happen when falling onto a vehicle without transitioning through PLAYER_MOVING
         self:updateTrackedLocation(player)
     end
 
     if player.trackedVehicleCoords ~= nil then
-        local targetX,targetY,targetZ = localToWorld(self.mainStateMachine.trackedVehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y, player.trackedVehicleCoords.z)
+        local vehicle = self.mainStateMachine.trackedVehicle
+        local targetX,targetY,targetZ = localToWorld(vehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y, player.trackedVehicleCoords.z)
 
         if (state == StickyFeetStateMachine.STATES.VEHICLE_MOVING and player.trackedVehicleCoords ~= nil) then
             dbgPrint("Moving player to target location")
             self:forceMovePlayer(player, targetX, targetY, targetZ)
+            -- Rotate the player around the Y axis by the same amount the vehicle has rotated
+            local dirX, _, dirZ = localDirectionToWorld(vehicle.rootNode, 0, 0, 1)
+            local newRotation = MathUtil.getYRotationFromDirection(dirX, dirZ)
+            if vehicle.previousRotation ~= nil then
+                local rotationDiff = newRotation - vehicle.previousRotation
+                player:setRotation(player.rotX, player.rotY + rotationDiff)
+            end
+            vehicle.previousRotation = newRotation
         end
 
         if state == StickyFeetStateMachine.STATES.BOTH_MOVING then
@@ -118,12 +132,13 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
             -- Find the vehicle at those coordinates in order to be able to obtain a new target Y value (in case the vehicle is moving uphill or downhill)
             self:updateTrackedVehicleAt(targetX, targetY + 0.2, targetZ)
             state = self.mainStateMachine.state
+            vehicle = self.mainStateMachine.trackedVehicle
             -- Note: if that location is no longer above a vehicle, the state machine will be in a NO_VEHICLE state now
             if state == StickyFeetStateMachine.STATES.BOTH_MOVING then
                 -- Remember the new tracked location
                 self:updateTrackedLocation(player)
                 -- Convert to new world coordinates
-                targetX,targetY,targetZ = localToWorld(self.mainStateMachine.trackedVehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y, player.trackedVehicleCoords.z)
+                targetX,targetY,targetZ = localToWorld(vehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y, player.trackedVehicleCoords.z)
             end
             dbgPrint("Moving player to target location")
             self:forceMovePlayer(player, targetX, targetY, targetZ)
@@ -160,6 +175,12 @@ function PlayerVehicleTracker:vehicleRaycastCallback(potentialVehicleId, x, y, z
     return true
 end
 
+---This is called on both client and server when players shall be synchronized. However, data will only be sent from clients since the server will never
+---have data related to force moving
+---@param player table @The player to synchronize
+---@param streamId number @The ID of the network stream
+---@param connection table @Unused
+---@param dirtyMask table @Unused
 function PlayerVehicleTracker:after_player_writeUpdateStream(player, streamId, connection, dirtyMask)
     -- Send vehicle tracking data only for the own player on each client
     local forceMoveIsValid = player.forceMoveVehicle ~= nil
@@ -177,6 +198,12 @@ function PlayerVehicleTracker:after_player_writeUpdateStream(player, streamId, c
     end
 end
 
+---This is called on both client and server when other clients sent synchronisation data.
+---It will be processed on both server and clients in order to move non-local players to the appropriate positions.
+---@param player table @The player to synchronize
+---@param streamId number @The ID of the network stream
+---@param timestamp unknown @The timestamp of the update
+---@param connection table @Unused
 function PlayerVehicleTracker:after_player_readUpdateStream(player, streamId, timestamp, connection)
     if streamReadBool(streamId) then
         print("Receiving player position for player ID " .. tostring(player.id))

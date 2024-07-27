@@ -41,6 +41,10 @@
         "g_movementBehavior",
         "getLinearDamping",
         "setLinearDamping",
-        "moveCCT"
+        "moveCCT",
+        "getRotation",
+        "setRotation",
+        "renderText",
+        "localDirectionToWorld"
     ]
 }
