@@ -24,7 +24,7 @@ function PlayerVehicleTracker:updateTrackedVehicleAt(x,y,z)
     -- Find the first vehicle below the player (that actually includes pallets)
     self.lastVehicleMatch = nil
     self.lastObjectMatch = nil
-    local maxDistance = 5
+    local maxDistance = 25
     local collisionMask = CollisionFlag.STATIC_OBJECT + CollisionFlag.DYNAMIC_OBJECT + CollisionFlag.VEHICLE + CollisionFlag.PLAYER
     raycastAll(x, y + 0.05, z, 0,-1,0, "vehicleRaycastCallback", maxDistance, self, collisionMask)
 
@@ -136,7 +136,8 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
             vehicle.previousRotation = newRotation
         end
 
-        if state == StickyFeetStateMachine.STATES.BOTH_MOVING then
+        -- If the vehicle is moving and the player is either moving, jumping up or falling down
+        if self.mainStateMachine:playerIsMovingAboveVehicle() then
             -- Calculate the desired player movement
             local desiredSpeed = player:getDesiredSpeed()
             local dtInSeconds = dt * 0.001
@@ -145,25 +146,35 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
             -- Calculate the target world coordinates
             targetX = targetX + desiredSpeedX
             targetZ = targetZ + desiredSpeedZ
-            -- Find the vehicle at those coordinates in order to be able to obtain a new target Y value (in case the vehicle is moving uphill or downhill)
+            -- Find the vehicle at those coordinates to check wether or not the location is still on the vehicle
             self:updateTrackedVehicleAt(targetX, targetY + 0.2, targetZ)
             state = self.mainStateMachine.state
             vehicle = self.mainStateMachine.trackedVehicle
             -- Note: if that location is no longer above a vehicle, the state machine will be in a NO_VEHICLE state now
-            if state == StickyFeetStateMachine.STATES.BOTH_MOVING then
+            if self.mainStateMachine:playerIsMovingAboveVehicle() then
                 -- Remember the new tracked location
                 self:updateTrackedLocation(player)
                 -- Convert to new world coordinates
                 targetX,targetY,targetZ = localToWorld(vehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y, player.trackedVehicleCoords.z)
+                -- Adjust for jumping or falling
+                if state == StickyFeetStateMachine.STATES.JUMPING_ABOVE_VEHICLE or state == StickyFeetStateMachine.STATES.FALLING_ABOVE_VEHICLE then
+                    local _, graphicsY, _ = localToWorld(player.graphicsRootNode, 0, 0, 0)
+                    local adjustedYCoordinate = graphicsY + player.motionInformation.currentSpeedY * dtInSeconds
+                    if adjustedYCoordinate > targetY then
+                        targetY = adjustedYCoordinate
+                    elseif state == StickyFeetStateMachine.STATES.FALLING_ABOVE_VEHICLE then
+                        -- the player is still considered falling, but they landed on the trailer or something else 
+                        -- => we need to convince the game engine that the player is in fact no longer falling
+                        player.motionInformation.currentSpeedY = 0
+                        player.baseInformation.isOnGround = true
+                        player.playerStateMachine.playerStateFall:deactivate()
+                        player.networkInformation.interpolatorOnGround:setValue(1.0)
+                    end
+                end
             end
             dbgPrint("Moving player to target location")
             self:forceMovePlayer(player, targetX, targetY, targetZ)
         end
-    end
-
-    if state == StickyFeetStateMachine.STATES.JUMPING_ABOVE_VEHICLE or state == StickyFeetStateMachine.STATES.FALLING_ABOVE_VEHICLE then
-        -- Stop tracking until the player has landed (too many issues otherwise)
-        player.trackedVehicleCoords = nil
     end
 
     -- Nothing to do in other states
