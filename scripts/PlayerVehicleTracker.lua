@@ -58,6 +58,7 @@ end
 ---@param y number @The Y coordinate of the target graphics root node position
 ---@param z number @The Z coordinate of the target graphics root node position
 function PlayerVehicleTracker:forceMovePlayer(player, x, y, z)
+    dbgPrint("Force moving player")
     player:moveToAbsoluteInternal(x, y + player.model.capsuleTotalHeight * 0.5, z)
     setTranslation(player.graphicsRootNode, x, y, z)
     if self.mainStateMachine.trackedVehicle then
@@ -76,7 +77,7 @@ end
 ---@param dt number @The time delta since the previous call
 function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
 
-    -- Other players. Just move them along with the vehicle as long as that's possible
+    -- Other players: Just move them along with the vehicle as long as that's possible
     if player.syncedLockVehicle ~= nil then
         local x,y,z = localToWorld(player.syncedLockVehicle.rootNode, player.syncedLockCoords.x, player.syncedLockCoords.y, player.syncedLockCoords.z)
         player:moveToAbsoluteInternal(x, y + player.model.capsuleTotalHeight * 0.5, z)
@@ -94,12 +95,6 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
     local previousVehicle = self.mainStateMachine.trackedVehicle
     local playerWorldX, playerWorldY, playerWorldZ = player:getPositionData()
     self:updateTrackedVehicleAt(playerWorldX, playerWorldY, playerWorldZ)
-    if self.lastVehicleMatch ~= nil then
-        DebugUtil.drawDebugNode(self.lastVehicleMatch.object.rootNode, "lastVehicleMatch", false)
-    end
-    if self.lastObjectMatch ~= nil then
-        DebugUtil.drawDebugNode(self.lastObjectMatch.object.nodeId, "lastObjectMatch", false)
-    end
 
     -- Depending on the state, do different things:
     -- If there is no vehicle below the player, or neither player nor vehicle are moving, nothing has to be done
@@ -119,7 +114,7 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
         self:updateTrackedLocation(player)
     end
 
-    if player.trackedVehicleCoords ~= nil then
+    if player.trackedVehicleCoords ~= nil and state ~= StickyFeetStateMachine.STATES.LEAVING_VEHICLE then
         local vehicle = self.mainStateMachine.trackedVehicle
         local targetX,targetY,targetZ = localToWorld(vehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y, player.trackedVehicleCoords.z)
 
@@ -152,6 +147,7 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
             vehicle = self.mainStateMachine.trackedVehicle
             -- Note: if that location is no longer above a vehicle, the state machine will be in a NO_VEHICLE state now
             if self.mainStateMachine:playerIsMovingAboveVehicle() then
+                dbgPrint("Target location is still above vehicle")
                 -- Remember the new tracked location
                 self:updateTrackedLocation(player)
                 -- Convert to new world coordinates
@@ -171,6 +167,12 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
                         player.networkInformation.interpolatorOnGround:setValue(1.0)
                     end
                 end
+            else
+                dbgPrint("Target location is no longer above vehicle")
+                -- Keep Y coordinate so the next force move does not force the player down on the trailer again
+                -- This is required only once since the state machine will prevent further position manipulations from happening
+                local _, graphicsY, _ = localToWorld(player.graphicsRootNode, 0, 0, 0)
+                targetY = graphicsY
             end
             dbgPrint("Moving player to target location")
             self:forceMovePlayer(player, targetX, targetY, targetZ)

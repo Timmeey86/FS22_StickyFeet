@@ -3,11 +3,12 @@ MOD_NAME = g_currentModName or "unknown"
 
 StickyFeet = {}
 
-local mainStateMachine = StickyFeetStateMachine.new()
+local debugStateMachineSwitch = true
+local debugSwitch = false
+local mainStateMachine = StickyFeetStateMachine.new(debugStateMachineSwitch)
 local playerVehicleTracker = PlayerVehicleTracker.new(mainStateMachine)
 local vehicleMovementTracker = VehicleMovementTracker.new(mainStateMachine)
 local playerMovementStateMachine = PlayerMovementStateMachine.new(mainStateMachine)
-local debugSwitch = false
 function dbgPrint(text)
     if debugSwitch then
         print(("%s [%.4f]: %s"):format(MOD_NAME, g_currentMission.environment.dayTime / 1000, text))

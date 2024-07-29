@@ -5,36 +5,39 @@ StickyFeetStateMachine = {
     STATES = {
         NO_PLAYER = 1,
         NO_VEHICLE = 2,
-        NOT_MOVING = 3,
+        IDLE_ON_VEHICLE = 3,
         PLAYER_MOVING = 4,
         VEHICLE_MOVING = 5,
         BOTH_MOVING = 6,
         JUMPING_ABOVE_VEHICLE = 7,
-        FALLING_ABOVE_VEHICLE = 8
+        FALLING_ABOVE_VEHICLE = 8,
+        JUMPING_ONTO_VEHICLE = 9,
+        JUMPING_FROM_MOVING_VEHICLE = 10
     }
 }
 local StickyFeetStateMachine_mt = Class(StickyFeetStateMachine)
 
 ---Creates a new state machine
 ---@return table @The new instance
-function StickyFeetStateMachine.new()
+function StickyFeetStateMachine.new(debugStateMachineSwitch)
     local self = setmetatable({}, StickyFeetStateMachine_mt)
     self:reset()
     self.vehicleMovementStates = {}
+    self.debugStateMachineSwitch = debugStateMachineSwitch
     return self
 end
 
 ---Prints the current state
 ---@param reason string @The reason for the state switch (no message if still the same state)
 function StickyFeetStateMachine:printState(reason)
-    if self.state ~= self.previouslyPrintedState then
+    if self.debugStateMachineSwitch and self.state ~= self.previouslyPrintedState then
         local newState = "UNKNOWN State"
         if self.state == StickyFeetStateMachine.STATES.NO_PLAYER then
             newState = "NO_PLAYER"
         elseif self.state == StickyFeetStateMachine.STATES.NO_VEHICLE then
             newState = "NO_VEHICLE"
-        elseif self.state == StickyFeetStateMachine.STATES.NOT_MOVING then
-            newState = "NOT_MOVING"
+        elseif self.state == StickyFeetStateMachine.STATES.IDLE_ON_VEHICLE then
+            newState = "IDLE_ON_VEHICLE"
         elseif self.state == StickyFeetStateMachine.STATES.PLAYER_MOVING then
             newState = "PLAYER_MOVING"
         elseif self.state == StickyFeetStateMachine.STATES.VEHICLE_MOVING then
@@ -45,6 +48,10 @@ function StickyFeetStateMachine:printState(reason)
             newState = "JUMPING_ABOVE_VEHICLE"
         elseif self.state == StickyFeetStateMachine.STATES.FALLING_ABOVE_VEHICLE then
             newState = "FALLING_ABOVE_VEHICLE"
+        elseif self.state == StickyFeetStateMachine.STATES.JUMPING_ONTO_VEHICLE then
+            newState = "JUMPING_ONTO_VEHICLE"
+        elseif self.state == StickyFeetStateMachine.STATES.JUMPING_FROM_MOVING_VEHICLE then
+            newState = "JUMPING_FROM_MOVING_VEHICLE"
         end
         self.previouslyPrintedState = self.state
         print(("%s: Switching state machine to '%s' because '%s'"):format(MOD_NAME, newState, reason))
@@ -77,47 +84,67 @@ end
 ---Call this after finding out whether or not there is a vehicle below the player
 ---@param trackedVehicle table @The vehicle below the player (may be nil)
 function StickyFeetStateMachine:onVehicleBelowPlayerUpdated(trackedVehicle)
-    local triggerSubTransitions = false
-    if trackedVehicle == nil and self.state ~= StickyFeetStateMachine.STATES.NO_PLAYER then
-        -- Interrupt event: Transition to NO_VEHICLE, except if in NO_PLAYER state (in which case this method should not be called)
-        self.state = StickyFeetStateMachine.STATES.NO_VEHICLE
-    elseif trackedVehicle ~= nil and self.state == StickyFeetStateMachine.STATES.NO_VEHICLE then
-        self.state = StickyFeetStateMachine.STATES.NOT_MOVING
-        triggerSubTransitions = true
+    if self.trackedVehicle ~= nil and trackedVehicle == nil then
+        if not self.playerIsFalling and not self.playerIsJumping then
+            -- Player lost the vehicle => reset to NO_VEHICLE state, no matter where the state machine was
+            self.state = StickyFeetStateMachine.STATES.NO_VEHICLE
+            self:printState("player lost the vehicle")
+        elseif self.state == StickyFeetStateMachine.STATES.JUMPING_ABOVE_VEHICLE or self.state == StickyFeetStateMachine.STATES.FALLING_ABOVE_VEHICLE then
+            -- Player was jumping above a vehicle, but lost it, transition through an intermediate state until they are on the ground
+            self.state = StickyFeetStateMachine.STATES.JUMPING_FROM_MOVING_VEHICLE
+            self:printState("player lost the vehicle mid jump")
+        else
+            -- Player jumped from a stationary vehicle, and other cases
+            self.state = StickyFeetStateMachine.STATES.NO_VEHICLE
+            self:printState("player jumped from a stationary vehicle, or otherwise left the vehicle")
+        end
+    elseif self.state == StickyFeetStateMachine.STATES.NO_VEHICLE and trackedVehicle ~= nil then
+        -- There was no vehicle, but there is now:
+        if not self.playerIsFalling and not self.playerIsJumping then
+            -- Player somehow managed to get onto a vehicle without jumping or falling. Advance the state machine
+            self.state = StickyFeetStateMachine.STATES.IDLE_ON_VEHICLE
+            self:printState("player suddenly found vehicle")
+        else
+            -- This is the default case: The player is jumping onto a vehicle (doesn't matter if still jumping or already falling)
+            -- Stay in an intermediate state until they have landed
+            self.state = StickyFeetStateMachine.STATES.JUMPING_ONTO_VEHICLE
+            self:printState("player is jumping onto vehicle")
+        end
+    elseif self.state == StickyFeetStateMachine.STATES.JUMPING_FROM_MOVING_VEHICLE
+        and self.trackedVehicle ~= nil and trackedVehicle ~= nil
+        and self.trackedVehicle ~= trackedVehicle then
+        -- Special case: The player is jumping from a moving vehicle but has found another vehicle
+        self.state = StickyFeetStateMachine.STATES.JUMPING_ONTO_VEHICLE
+        self:printState("player is jumping from one vehicle to another")
     end
+    -- Remember the tracked vehicle in any case
     self.trackedVehicle = trackedVehicle
-    self:printState("trackedVehicle is " .. tostring(trackedVehicle))
-
-    if triggerSubTransitions then
-        -- maybe transition to other states based on current flags
-        self:onPlayerMovementUpdated(self.playerIsMoving)
-        self:onVehicleMovementUpdated(self.trackedVehicle, self.vehicleMovementStates[self.trackedVehicle] or false)
-        self:onPlayerJumpingStateUpdated(self.playerIsJumping)
-        self:onPlayerFallingStateUpdated(self.playerIsFalling)
-    end
 end
 
 ---Call this after figuring out whether or not the player is moving
 ---@param isMoving boolean @True if the player is moving
 function StickyFeetStateMachine:onPlayerMovementUpdated(isMoving)
-    self:printState("checking if a print is missing")
     if isMoving then
-        if self.state == StickyFeetStateMachine.STATES.NOT_MOVING then
+        if self.state == StickyFeetStateMachine.STATES.IDLE_ON_VEHICLE then
             self.state = StickyFeetStateMachine.STATES.PLAYER_MOVING
+            self:printState("player is now moving on an idle vehicle")
         elseif self.state == StickyFeetStateMachine.STATES.VEHICLE_MOVING then
             self.state = StickyFeetStateMachine.STATES.BOTH_MOVING
-        -- else: remain in same state
+            self:printState("player is no moving on a moving vehicle")
         end
     else
         if self.state == StickyFeetStateMachine.STATES.PLAYER_MOVING then
-            self.state = StickyFeetStateMachine.STATES.NOT_MOVING
+            self.state = StickyFeetStateMachine.STATES.IDLE_ON_VEHICLE
+            self:printState("player is no longer moving on an idle vehicle")
         elseif self.state == StickyFeetStateMachine.STATES.BOTH_MOVING then
             self.state = StickyFeetStateMachine.STATES.VEHICLE_MOVING
-        -- else: remain in same state
+            self:printState("player is no longer moving on a moving vehicle")
         end
     end
+    -- Movement state does not matter in any other case
+
+    -- Remember the moving state in any case
     self.playerIsMoving = isMoving
-    self:printState("player.isMoving == " .. tostring(isMoving))
 end
 
 ---Call this after figuring out whether or not the vehicle is moving
@@ -128,74 +155,83 @@ function StickyFeetStateMachine:onVehicleMovementUpdated(vehicle, isMoving)
     if vehicle == nil then
         return
     else
-        -- Store the movement states for all vehicles in case the player 
+        -- Store the movement states for all vehicles. The player might jump onto a moving one, for example.
         self.vehicleMovementStates[vehicle] = isMoving
     end
 
-    -- Only update the state machine if the state of the tracked vehicle changes.
+    -- The player is still on the same vehicle
     if vehicle == self.trackedVehicle then
         if isMoving then
-            if self.state == StickyFeetStateMachine.STATES.NOT_MOVING then
+            if self.state == StickyFeetStateMachine.STATES.IDLE_ON_VEHICLE then
                 self.state = StickyFeetStateMachine.STATES.VEHICLE_MOVING
+                self:printState("tracked vehicle is now moving")
             elseif self.state == StickyFeetStateMachine.STATES.PLAYER_MOVING then
                 self.state = StickyFeetStateMachine.STATES.BOTH_MOVING
-            -- else: remain in same state
+                self:printState("both player and tracked vehicle are now moving")
             end
         else
             if self.state == StickyFeetStateMachine.STATES.VEHICLE_MOVING then
-                self.state = StickyFeetStateMachine.STATES.NOT_MOVING
+                self.state = StickyFeetStateMachine.STATES.IDLE_ON_VEHICLE
+                self:printState("tracked vehicle is no longer moving")
             elseif self.state == StickyFeetStateMachine.STATES.BOTH_MOVING then
                 self.state = StickyFeetStateMachine.STATES.PLAYER_MOVING
-            -- else: remain in same state
+                self:printState("tracked vehicle is no longer moving (but player is)")
             end
         end
     end
-    self:printState("vehicle.isMoving == " .. tostring(isMoving) .. " (vehicle: " .. tostring(vehicle) .. ")")
+    -- If the vehicle suddenly changed, the next tracked vehicle update will advance the state machine
 end
 
 ---Call this when the jumping state of the player changes
 ---@param isJumping any
 function StickyFeetStateMachine:onPlayerJumpingStateUpdated(isJumping)
     if isJumping then
-       if self.state == StickyFeetStateMachine.STATES.VEHICLE_MOVING
-            or self.state == StickyFeetStateMachine.STATES.BOTH_MOVING
-            or self.state == StickyFeetStateMachine.STATES.FALLING_ABOVE_VEHICLE then
+        -- Note: Transition from NO_VEHICLE to JUMPING_ONTO_VEHICLE is handled by onVehicleBelowPlayerUpdated
 
+        if self.state == StickyFeetStateMachine.STATES.VEHICLE_MOVING or self.state == StickyFeetStateMachine.STATES.BOTH_MOVING then
             self.state = StickyFeetStateMachine.STATES.JUMPING_ABOVE_VEHICLE
-        -- else: Ignore
+            self:printState("player is jumping above moving vehicle")
         end
-    else
-        -- In theory, this should always be followed by a falling state
     end
     self.playerIsJumping = isJumping
-    self:printState("player.isJumping == " .. tostring(isJumping))
 end
 
 ---Call this when the falling state of the player changes
 ---@param isFalling any
 function StickyFeetStateMachine:onPlayerFallingStateUpdated(isFalling)
-    local triggerSubTransitions = false
     if isFalling then
-       if self.state == StickyFeetStateMachine.STATES.VEHICLE_MOVING
-            or self.state == StickyFeetStateMachine.STATES.BOTH_MOVING
-            or self.state == StickyFeetStateMachine.STATES.JUMPING_ABOVE_VEHICLE then
-
+        if self.state == StickyFeetStateMachine.STATES.JUMPING_ABOVE_VEHICLE then
             self.state = StickyFeetStateMachine.STATES.FALLING_ABOVE_VEHICLE
-        -- else: Ignore
+            self:printState("player is now falling above moving vehicle")
         end
-    else
+    elseif not self.playerIsJumping then
+        -- Neither jumping nor falling => If the player is in a state which was triggered by a jump, they have landed
         if self.state == StickyFeetStateMachine.STATES.FALLING_ABOVE_VEHICLE then
-            self.state = StickyFeetStateMachine.STATES.VEHICLE_MOVING
-            triggerSubTransitions = true
+            if self.playerIsMoving then
+                self.state = StickyFeetStateMachine.STATES.BOTH_MOVING
+                self:printState("player has landed, but is still moving")
+            else
+                self.state = StickyFeetStateMachine.STATES.VEHICLE_MOVING
+                self:printState("player has landed, and isn't moving")
+            end
+        elseif self.state == StickyFeetStateMachine.STATES.JUMPING_FROM_MOVING_VEHICLE then
+            self.state = StickyFeetStateMachine.STATES.NO_VEHICLE
+            self:printState("player has landed on ground after jumping from vehicle")
+        elseif self.state == StickyFeetStateMachine.STATES.JUMPING_ONTO_VEHICLE then
+            if self.trackedVehicle ~= nil and self.vehicleMovementStates[self.trackedVehicle] == true then
+                self.state = StickyFeetStateMachine.STATES.VEHICLE_MOVING
+                self:printState("player has landed on a moving vehicle")
+            elseif self.trackedVehicle ~= nil and self.vehicleMovementStates[self.trackedVehicle] == false then
+                self.state = StickyFeetStateMachine.STATES.IDLE_ON_VEHICLE
+                self:printState("player has landed on a stationary vehicle")
+            elseif self.trackedVehicle == nil then
+                Logging.error(MOD_NAME .. ": State machine is in JUMPING_ONTO_VEHICLE state with a nil vehicle. Resetting")
+                self:reset()
+                self:printState("state machine is recovering from an error")
+            end
         end
     end
     self.playerIsFalling = isFalling
-    self:printState("player.isFalling == " .. tostring(isFalling))
-
-    if triggerSubTransitions then
-        -- Transition to BOTH_MOVING state now if the player was moving mid jump
-        self:onPlayerMovementUpdated(self.playerIsMoving)
-    end
 end
 
 ---Convenience function which checks if the player is in one of several possible states which describe movement above a moving vehicle
