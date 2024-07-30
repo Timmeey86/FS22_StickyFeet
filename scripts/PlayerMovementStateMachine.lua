@@ -36,7 +36,7 @@ function PlayerMovementStateMachine:checkMovementState(player)
             self.mainStateMachine:onPlayerMovementUpdated(false)
         end
         self.mainStateMachine:onPlayerJumpingStateUpdated(player.playerStateMachine.playerStateJump.isActive)
-        self.mainStateMachine:onPlayerFallingStateUpdated(player.playerStateMachine.playerStateFall.isActive)
+        self.mainStateMachine:onPlayerFallingStateUpdated(player.playerStateMachine.playerStateFall.isActive, player.baseInformation.isOnGround)
     -- else: Server and other clients won't know the state machine state.
     end
 end
