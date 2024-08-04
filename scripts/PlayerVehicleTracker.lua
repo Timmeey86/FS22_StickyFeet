@@ -118,13 +118,16 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
             -- Reset rotation so it doesn't get used when the player hops on the same vehicle again
             previousVehicle.previousRotation = nil
         end
-    elseif state == StickyFeetStateMachine.playerIsMoving
-        or self.mainStateMachine:playerIsMovingAboveVehicle()
+    elseif self.mainStateMachine:playerIsMovingAboveMovingVehicle()
+        or state == StickyFeetStateMachine.STATES.PLAYER_MOVING
         or state == StickyFeetStateMachine.STATES.JUMPING_ONTO_VEHICLE
-        or (previousVehicle ~= nil and self.mainStateMachine.trackedVehicle ~= previousVehicle) then
+        or (previousVehicle ~= nil and self.mainStateMachine.trackedVehicle ~= previousVehicle)
+        or (state == StickyFeetStateMachine.STATES.IDLE_ON_VEHICLE and self.mainStateMachine.previousState == StickyFeetStateMachine.STATES.PLAYER_MOVING)
+        then
+
         dbgPrint("Updating tracked vehicle coordinates since player is moving above a vehicle in some way (or because the vehicle changed)")
 
-        -- Always update the tracked location if the player is moving in any way
+        -- Always update the tracked location if the player is moving in any way (and for one update after stopping, so we get the position they are stopped at)
         self:updateTrackedLocation(player)
     end
 
@@ -150,7 +153,7 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
         end
 
         -- If the vehicle is moving and the player is either moving, jumping up or falling down
-        if self.mainStateMachine:playerIsMovingAboveVehicle() then
+        if self.mainStateMachine:playerIsMovingAboveMovingVehicle() then
             dbgPrint("Player is moving above vehicle - adding player vector to target coordinates")
             -- Calculate the desired player movement
             local desiredSpeed = player:getDesiredSpeed()
@@ -166,7 +169,7 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
             state = self.mainStateMachine.state
             vehicle = self.mainStateMachine.trackedVehicle
             -- Note: if that location is no longer above a vehicle, the state machine will be in a NO_VEHICLE state now
-            if self.mainStateMachine:playerIsMovingAboveVehicle() then
+            if self.mainStateMachine:playerIsMovingAboveMovingVehicle() then
                 dbgPrint("Target location is still above vehicle. Updating tracked vehicle coordinates")
                 -- Remember the new tracked location
                 self:updateTrackedLocation(player)
@@ -214,7 +217,9 @@ function PlayerVehicleTracker:vehicleRaycastCallback(potentialVehicleId, x, y, z
         local object = g_currentMission:getNodeObject(potentialVehicleId)
         if object ~= nil and (object:isa(Vehicle)) then
             self.lastVehicleMatch = { object = object, x = x, y = y, z = z, distance = distance }
-            print(("%s: Found vehicle with ID %d at %.3f/%.3f/%.3f, %.3fm below player location"):format(MOD_NAME, object.id, x, y, z, distance - g_currentMission.player.model.capsuleTotalHeight ))
+            if self.debugVehicleDetection then
+                print(("%s: Found vehicle with ID %d at %.3f/%.3f/%.3f, %.3fm below player location"):format(MOD_NAME, object.id, x, y, z, distance - g_currentMission.player.model.capsuleTotalHeight ))
+            end
             -- Stop searching
             return false
         elseif object ~= nil and self.lastObjectMatch == nil and (object:isa(Bale) or object:isa(Player)) then

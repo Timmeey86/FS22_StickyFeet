@@ -58,9 +58,17 @@ function StickyFeetStateMachine:printState(reason)
     end
 end
 
+---Switches to a new state and remembers the previous one
+---@param newState integer @The new state
+function StickyFeetStateMachine:setState(newState)
+    self.previousState = self.state
+    self.state = newState
+end
+
 ---Call this if the state of the state machine is no longer valid
 function StickyFeetStateMachine:reset()
     self.state = StickyFeetStateMachine.STATES.NO_PLAYER
+    self.previousState = nil
     self.trackedVehicle = nil
     self.playerIsMoving = false
     self.playerIsJumping = false
@@ -75,7 +83,7 @@ function StickyFeetStateMachine:onPlayerIsEnteredStateUpdated(isEntered)
         -- if the player is not entered, all the internal flags are invalid and must be updated as soon as they are entered again
         self:reset()
     elseif self.state == StickyFeetStateMachine.STATES.NO_PLAYER then
-        self.state = StickyFeetStateMachine.STATES.NO_VEHICLE
+        self:setState(StickyFeetStateMachine.STATES.NO_VEHICLE)
     -- else: Stay in current state
     end
     self:printState("player.isEntered == " .. tostring(isEntered))
@@ -87,35 +95,35 @@ function StickyFeetStateMachine:onVehicleBelowPlayerUpdated(trackedVehicle)
     if self.trackedVehicle ~= nil and trackedVehicle == nil then
         if not self.playerIsFalling and not self.playerIsJumping then
             -- Player lost the vehicle => reset to NO_VEHICLE state, no matter where the state machine was
-            self.state = StickyFeetStateMachine.STATES.NO_VEHICLE
+            self:setState(StickyFeetStateMachine.STATES.NO_VEHICLE)
             self:printState("player lost the vehicle")
         elseif self.state == StickyFeetStateMachine.STATES.JUMPING_ABOVE_VEHICLE or self.state == StickyFeetStateMachine.STATES.FALLING_ABOVE_VEHICLE then
             -- Player was jumping above a vehicle, but lost it, transition through an intermediate state until they are on the ground
-            self.state = StickyFeetStateMachine.STATES.JUMPING_FROM_MOVING_VEHICLE
+            self:setState(StickyFeetStateMachine.STATES.JUMPING_FROM_MOVING_VEHICLE)
             self.originVehicle = self.trackedVehicle
             self:printState("player lost the vehicle mid jump")
         else
             -- Player jumped from a stationary vehicle, and other cases
-            self.state = StickyFeetStateMachine.STATES.NO_VEHICLE
+            self:setState(StickyFeetStateMachine.STATES.NO_VEHICLE)
             self:printState("player jumped from a stationary vehicle, or otherwise left the vehicle")
         end
     elseif self.state == StickyFeetStateMachine.STATES.NO_VEHICLE and trackedVehicle ~= nil then
         -- There was no vehicle, but there is now:
         if not self.playerIsFalling and not self.playerIsJumping then
             -- Player somehow managed to get onto a vehicle without jumping or falling. Advance the state machine
-            self.state = StickyFeetStateMachine.STATES.IDLE_ON_VEHICLE
+            self:setState(StickyFeetStateMachine.STATES.IDLE_ON_VEHICLE)
             self:printState("player suddenly found vehicle")
         else
             -- This is the default case: The player is jumping onto a vehicle (doesn't matter if still jumping or already falling)
             -- Stay in an intermediate state until they have landed
-            self.state = StickyFeetStateMachine.STATES.JUMPING_ONTO_VEHICLE
+            self:setState(StickyFeetStateMachine.STATES.JUMPING_ONTO_VEHICLE)
             self:printState("player is jumping onto vehicle")
         end
     elseif self.state == StickyFeetStateMachine.STATES.JUMPING_FROM_MOVING_VEHICLE
         and self.originVehicle ~= nil and trackedVehicle ~= nil
         and self.originVehicle ~= trackedVehicle then
         -- Special case: The player is jumping from a moving vehicle but has found another vehicle
-        self.state = StickyFeetStateMachine.STATES.JUMPING_ONTO_VEHICLE
+        self:setState(StickyFeetStateMachine.STATES.JUMPING_ONTO_VEHICLE)
         self:printState("player is jumping from one vehicle to another")
     end
     if self.debugStateMachineSwitch and self.trackedVehicle ~= nil and trackedVehicle ~= nil and self.trackedVehicle ~= trackedVehicle then
@@ -130,18 +138,18 @@ end
 function StickyFeetStateMachine:onPlayerMovementUpdated(isMoving)
     if isMoving then
         if self.state == StickyFeetStateMachine.STATES.IDLE_ON_VEHICLE then
-            self.state = StickyFeetStateMachine.STATES.PLAYER_MOVING
+            self:setState(StickyFeetStateMachine.STATES.PLAYER_MOVING)
             self:printState("player is now moving on an idle vehicle")
         elseif self.state == StickyFeetStateMachine.STATES.VEHICLE_MOVING then
-            self.state = StickyFeetStateMachine.STATES.BOTH_MOVING
+            self:setState(StickyFeetStateMachine.STATES.BOTH_MOVING)
             self:printState("player is no moving on a moving vehicle")
         end
     else
         if self.state == StickyFeetStateMachine.STATES.PLAYER_MOVING then
-            self.state = StickyFeetStateMachine.STATES.IDLE_ON_VEHICLE
+            self:setState(StickyFeetStateMachine.STATES.IDLE_ON_VEHICLE)
             self:printState("player is no longer moving on an idle vehicle")
         elseif self.state == StickyFeetStateMachine.STATES.BOTH_MOVING then
-            self.state = StickyFeetStateMachine.STATES.VEHICLE_MOVING
+            self:setState(StickyFeetStateMachine.STATES.VEHICLE_MOVING)
             self:printState("player is no longer moving on a moving vehicle")
         end
     end
@@ -167,18 +175,18 @@ function StickyFeetStateMachine:onVehicleMovementUpdated(vehicle, isMoving)
     if vehicle == self.trackedVehicle then
         if isMoving then
             if self.state == StickyFeetStateMachine.STATES.IDLE_ON_VEHICLE then
-                self.state = StickyFeetStateMachine.STATES.VEHICLE_MOVING
+                self:setState(StickyFeetStateMachine.STATES.VEHICLE_MOVING)
                 self:printState("tracked vehicle is now moving")
             elseif self.state == StickyFeetStateMachine.STATES.PLAYER_MOVING then
-                self.state = StickyFeetStateMachine.STATES.BOTH_MOVING
+                self:setState(StickyFeetStateMachine.STATES.BOTH_MOVING)
                 self:printState("both player and tracked vehicle are now moving")
             end
         else
             if self.state == StickyFeetStateMachine.STATES.VEHICLE_MOVING then
-                self.state = StickyFeetStateMachine.STATES.IDLE_ON_VEHICLE
+                self:setState(StickyFeetStateMachine.STATES.IDLE_ON_VEHICLE)
                 self:printState("tracked vehicle is no longer moving")
             elseif self.state == StickyFeetStateMachine.STATES.BOTH_MOVING then
-                self.state = StickyFeetStateMachine.STATES.PLAYER_MOVING
+                self:setState(StickyFeetStateMachine.STATES.PLAYER_MOVING)
                 self:printState("tracked vehicle is no longer moving (but player is)")
             end
         end
@@ -193,7 +201,7 @@ function StickyFeetStateMachine:onPlayerJumpingStateUpdated(isJumping)
         -- Note: Transition from NO_VEHICLE to JUMPING_ONTO_VEHICLE is handled by onVehicleBelowPlayerUpdated
 
         if self.state == StickyFeetStateMachine.STATES.VEHICLE_MOVING or self.state == StickyFeetStateMachine.STATES.BOTH_MOVING then
-            self.state = StickyFeetStateMachine.STATES.JUMPING_ABOVE_VEHICLE
+            self:setState(StickyFeetStateMachine.STATES.JUMPING_ABOVE_VEHICLE)
             self:printState("player is jumping above moving vehicle")
         end
     end
@@ -206,30 +214,30 @@ end
 function StickyFeetStateMachine:onPlayerFallingStateUpdated(isFalling, isOnGround)
     if isFalling then
         if self.state == StickyFeetStateMachine.STATES.JUMPING_ABOVE_VEHICLE then
-            self.state = StickyFeetStateMachine.STATES.FALLING_ABOVE_VEHICLE
+            self:setState(StickyFeetStateMachine.STATES.FALLING_ABOVE_VEHICLE)
             self:printState("player is now falling above moving vehicle")
         end
     elseif not self.playerIsJumping then
         -- Neither jumping nor falling => If the player is in a state which was triggered by a jump, they have landed
         if self.state == StickyFeetStateMachine.STATES.FALLING_ABOVE_VEHICLE then
             if self.playerIsMoving then
-                self.state = StickyFeetStateMachine.STATES.BOTH_MOVING
+                self:setState(StickyFeetStateMachine.STATES.BOTH_MOVING)
                 self:printState("player has landed, but is still moving")
             else
-                self.state = StickyFeetStateMachine.STATES.VEHICLE_MOVING
+                self:setState(StickyFeetStateMachine.STATES.VEHICLE_MOVING)
                 self:printState("player has landed, and isn't moving")
             end
         -- Note: We need to check if the player is on the ground since at the peak of a jump, they are neither falling nor jumping (just like on the ground)
         --       even though they are still mid air
         elseif self.state == StickyFeetStateMachine.STATES.JUMPING_FROM_MOVING_VEHICLE and isOnGround then
-            self.state = StickyFeetStateMachine.STATES.NO_VEHICLE
+            self:setState(StickyFeetStateMachine.STATES.NO_VEHICLE)
             if self.trackedVehicle == nil then
                 self:printState("player has landed on ground after jumping from vehicle")
             else
                 -- transition through states
                 local switchWasActive = self.debugStateMachineSwitch
                 self.debugStateMachineSwitch = false
-                self.state = StickyFeetStateMachine.STATES.NO_VEHICLE
+                self:setState(StickyFeetStateMachine.STATES.NO_VEHICLE)
                 self:onVehicleBelowPlayerUpdated(self.trackedVehicle)
                 self:onVehicleMovementUpdated(self.trackedVehicle, self.vehicleMovementStates[self.trackedVehicle] or false)
                 self:onPlayerMovementUpdated(self.playerIsMoving)
@@ -239,10 +247,10 @@ function StickyFeetStateMachine:onPlayerFallingStateUpdated(isFalling, isOnGroun
             end
         elseif self.state == StickyFeetStateMachine.STATES.JUMPING_ONTO_VEHICLE and isOnGround then
             if self.trackedVehicle ~= nil and self.vehicleMovementStates[self.trackedVehicle] == true then
-                self.state = StickyFeetStateMachine.STATES.VEHICLE_MOVING
+                self:setState(StickyFeetStateMachine.STATES.VEHICLE_MOVING)
                 self:printState("player has landed on a moving vehicle")
             elseif self.trackedVehicle ~= nil and self.vehicleMovementStates[self.trackedVehicle] == false then
-                self.state = StickyFeetStateMachine.STATES.IDLE_ON_VEHICLE
+                self:setState(StickyFeetStateMachine.STATES.IDLE_ON_VEHICLE)
                 self:printState("player has landed on a stationary vehicle")
             elseif self.trackedVehicle == nil then
                 Logging.error(MOD_NAME .. ": State machine is in JUMPING_ONTO_VEHICLE state with a nil vehicle. Resetting")
@@ -256,7 +264,7 @@ end
 
 ---Convenience function which checks if the player is in one of several possible states which describe movement above a moving vehicle
 ---@return boolean @True in case of BOTH_MOVING, JUMPING_ABOVE_VEHICLE and FALLING_ABOVE_VEHICLE states
-function StickyFeetStateMachine:playerIsMovingAboveVehicle()
+function StickyFeetStateMachine:playerIsMovingAboveMovingVehicle()
     return self.state == StickyFeetStateMachine.STATES.BOTH_MOVING
         or self.state == StickyFeetStateMachine.STATES.JUMPING_ABOVE_VEHICLE
         or self.state == StickyFeetStateMachine.STATES.FALLING_ABOVE_VEHICLE
