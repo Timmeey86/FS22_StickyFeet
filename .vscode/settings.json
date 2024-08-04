@@ -47,6 +47,7 @@
         "renderText",
         "localDirectionToWorld",
         "CollisionFlag",
-        "Bale"
+        "Bale",
+        "BaseMission"
     ]
 }

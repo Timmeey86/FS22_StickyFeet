@@ -118,6 +118,9 @@ function StickyFeetStateMachine:onVehicleBelowPlayerUpdated(trackedVehicle)
         self.state = StickyFeetStateMachine.STATES.JUMPING_ONTO_VEHICLE
         self:printState("player is jumping from one vehicle to another")
     end
+    if self.debugStateMachineSwitch and self.trackedVehicle ~= nil and trackedVehicle ~= nil and self.trackedVehicle ~= trackedVehicle then
+        print(("%s: Tracked vehicle has changed from %d to %d"):format(MOD_NAME, self.trackedVehicle.id, trackedVehicle.id))
+    end
     -- Remember the tracked vehicle in any case
     self.trackedVehicle = trackedVehicle
 end

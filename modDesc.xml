@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <modDesc descVersion="79">
     <author>Farmsim Tim (timmeey86)</author>
-    <version>0.0.1.0</version>
+    <version>0.0.2.0</version>
     <title>
         <en>Sticky Feet</en>
     </title>
@@ -13,11 +13,10 @@ The following features currently work in a somewhat stable way:
 - Sticking to the trailer while the player is not moving
 - Moving on the trailer with a constant speed in any direction
 - Auto-rotating with the vehicle as it's turning
+- Jumping within a trailer (you'll still move as fast as the vehicle)
+- Jumping onto and off a trailer (your movement speed will not be affected by the vehicle, though)
 
 The following things still need work:
-- Jumping off a trailer seems to get interrupted
-- Jumping from a trailer to the vehicle with 4x jump height seems to get interrupted
-- Jumping onto a moving trailer seems to mess with camera rotation (maybe only 3rd person)
 - Picking up objects doesn't work properly
 ]]></en>
     </description>
