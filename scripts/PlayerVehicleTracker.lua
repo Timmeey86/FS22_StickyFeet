@@ -25,9 +25,11 @@ function PlayerVehicleTracker:updateTrackedVehicleAt(x,y,z)
     -- Find the first vehicle below the player (that actually includes pallets)
     self.lastVehicleMatch = nil
     self.lastObjectMatch = nil
-    local maxDistance = 25
     local collisionMask = CollisionFlag.STATIC_OBJECT + CollisionFlag.DYNAMIC_OBJECT + CollisionFlag.VEHICLE + CollisionFlag.PLAYER
-    raycastAll(x, y, z, 0,-1,0, "vehicleRaycastCallback", maxDistance, self, collisionMask)
+    dbgPrint(("Looking for vehicle at %.3f/%.3f/%.3f"):format(x,y,z))
+    -- Look 4 meters above and 10 below the player to account for jumping and being stuck inside a vehicle
+    local maxDistance = 14
+    raycastAll(x, y + 4, z, 0,-1,0, "vehicleRaycastCallback", maxDistance, self, collisionMask)
 
     -- Update the state machine
     local trackedVehicle = nil
@@ -51,6 +53,8 @@ function PlayerVehicleTracker:updateTrackedLocation(player)
         end
     end
     player.trackedVehicleCoords = { x = xVehicle, y = yVehicle, z = zVehicle }
+    dbgPrint(("Tracked vehicle local coordinates are %.3f/%.3f/%.3f"):format(xVehicle, yVehicle, zVehicle))
+    dbgPrint(("Tracked vehicle global coordinates are %.3f/%.3f/%.3f"):format(self.lastVehicleMatch.x, self.lastVehicleMatch.y, self.lastVehicleMatch.z))
 end
 
 ---Force moves the player to the given location. This also stores network synchronisation values.
@@ -102,8 +106,8 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
     -- Find the first vehicle below the player
     local previousVehicle = self.mainStateMachine.trackedVehicle
     local playerWorldX, playerWorldY, playerWorldZ = player:getPositionData()
-    dbgPrint("Updating tracked vehicle in :checkForVehicleBelow (default case)")
-    self:updateTrackedVehicleAt(playerWorldX, playerWorldY + player.model.capsuleTotalHeight, playerWorldZ)
+    dbgPrint(("Updating tracked vehicle in :checkForVehicleBelow (default case) based on player pos %.3f/%.3f/%.3f"):format(playerWorldX, playerWorldY, playerWorldZ))
+    self:updateTrackedVehicleAt(playerWorldX, playerWorldY, playerWorldZ)
 
     -- Depending on the state, do different things:
     -- If there is no vehicle below the player, or neither player nor vehicle are moving, nothing has to be done
@@ -118,8 +122,7 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
             -- Reset rotation so it doesn't get used when the player hops on the same vehicle again
             previousVehicle.previousRotation = nil
         end
-    elseif self.mainStateMachine:playerIsMovingAboveMovingVehicle()
-        or state == StickyFeetStateMachine.STATES.PLAYER_MOVING
+    elseif state == StickyFeetStateMachine.STATES.PLAYER_MOVING
         or state == StickyFeetStateMachine.STATES.JUMPING_ONTO_VEHICLE
         or (previousVehicle ~= nil and self.mainStateMachine.trackedVehicle ~= previousVehicle)
         or (state == StickyFeetStateMachine.STATES.IDLE_ON_VEHICLE and self.mainStateMachine.previousState == StickyFeetStateMachine.STATES.PLAYER_MOVING)
@@ -160,12 +163,14 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
             local dtInSeconds = dt * 0.001
             local desiredSpeedX = player.motionInformation.currentWorldDirX * desiredSpeed * dtInSeconds
             local desiredSpeedZ = player.motionInformation.currentWorldDirZ * desiredSpeed * dtInSeconds
+            dbgPrint(("Desired speed is %.3f, dt is %.3fs, X/Y speed is %.3f/%.3f"):format(desiredSpeed, dtInSeconds, desiredSpeedX, desiredSpeedZ))
             -- Calculate the target world coordinates
             targetX = targetX + desiredSpeedX
             targetZ = targetZ + desiredSpeedZ
+            dbgPrint(("New target coordinates are %.3f/%.3f/%.3f based on vehicle ID %d"):format(targetX, targetY, targetZ, vehicle.id))
             -- Find the vehicle at those coordinates to check wether or not the location is still on the vehicle
             dbgPrint("Updating tracked vehicle in :checkForVehicleBelow ('player is moving' case)")
-            self:updateTrackedVehicleAt(targetX, targetY + player.model.capsuleTotalHeight, targetZ)
+            self:updateTrackedVehicleAt(targetX, targetY, targetZ)
             state = self.mainStateMachine.state
             vehicle = self.mainStateMachine.trackedVehicle
             -- Note: if that location is no longer above a vehicle, the state machine will be in a NO_VEHICLE state now
@@ -173,8 +178,9 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
                 dbgPrint("Target location is still above vehicle. Updating tracked vehicle coordinates")
                 -- Remember the new tracked location
                 self:updateTrackedLocation(player)
-                -- Convert to new world coordinates
+                -- Retrieve target world coordinates
                 targetX,targetY,targetZ = localToWorld(vehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y, player.trackedVehicleCoords.z)
+                dbgPrint(("Final target coordinates are %.3f/%.3f/%.3f based on vehicle ID %d"):format(targetX, targetY, targetZ, vehicle.id))
                 -- Adjust for jumping or falling
                 if state == StickyFeetStateMachine.STATES.JUMPING_ABOVE_VEHICLE or state == StickyFeetStateMachine.STATES.FALLING_ABOVE_VEHICLE then
                     local _, graphicsY, _ = localToWorld(player.graphicsRootNode, 0, 0, 0)

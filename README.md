@@ -1,11 +1,8 @@
-# FS22_RideAlong
+# FS22_StickyFeet
 
 ## Mod description
 
-This is a highly experimental mod in early development stage.
-The mod tries to make it so players will move at the same speed as the vehicle below them while stationary, and have their movement speed be relative to the vehicle below them rather than relative to the ground.
-
-Expect many game-breaking bugs at this stage.
+This is a mod for Farming Simulator 22 which allows you to stay on moving vehicles without falling off.
 
 ## Screenshots
 
