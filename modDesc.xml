@@ -13,7 +13,7 @@
 The possibilities which are opened up by this still need to be explored, but some are:
 - Carrying your friends to the workplace in the back of a pickup truck or a trailer
 - Slowly driving across a field with small bales with a second player bringing them to the trailer and a third stacking them
-- Streamers can film from angles which are otherwise impossible
+- Streamers can film from angles which are otherwise impossible (while the AI is working the field)
 - Stacking bales on a trailer in single player while letting the AI drive and using a baler which lifts bales up to the trailer
 
 The following features currently work:
@@ -39,7 +39,9 @@ Big thanks to Loki_79 for sharing his experience and helping in testing this mod
 Die Möglichkeiten, die das bietet, müssen noch erforscht werden, aber manche davon sind:
 - Ihr könnt eure Freunde auf der Ladefläche eines Pickups oder in einem Anhänger zur Arbeit fahren
 - Ein Spieler kann langsam über ein Feld mit kleinen Ballen fahren während ein zweiter Spieler sie zum Anhänger bringt und ein dritter sie stapelt
-- Streamer können damit Kameraperspektiven erreichen, die sonst nicht möglich wären
+- Streamer können damit Kameraperspektiven erreichen, die sonst nicht möglich wären (während die KI das Feld bearbeitet)
+- Im Einzelspieler-Modus Ballen auf einem Anhänger stapeln während die AI den Schlepper fährt und eine Ballenpresse verwendet wird, die die Ballen auf den Anhänger hoch befördert
+
 
 Die folgenden Dinge funktionieren momentan:
 - Auf einem sich bewegenden Anhänger bleiben während der Spieler sich nicht bewegt

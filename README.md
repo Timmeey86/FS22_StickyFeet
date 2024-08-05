@@ -4,9 +4,13 @@
 
 This is a mod for Farming Simulator 22 which allows you to stay on moving vehicles without falling off.
 
-## Screenshots
+## Videos
 
-TODO
+Since videos can best explain this mod:
+
+[![Video showcasing jumping on vehicle](screenshots/Thumb1.png)](https://youtu.be/PySSWl_zaMY)
+
+[![Video showcasing bale stacking](screenshots/Thumb2.png)](https://www.youtube.com/watch?v=JfD-vVAJN4w)
 
 ## How to install
 

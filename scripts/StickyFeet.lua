@@ -3,8 +3,8 @@ MOD_NAME = g_currentModName or "unknown"
 
 StickyFeet = {}
 
-local debugStateMachineSwitch = true
-local debugSwitch = true
+local debugStateMachineSwitch = false
+local debugSwitch = false
 local debugVehicleDetection = false
 local mainStateMachine = StickyFeetStateMachine.new(debugStateMachineSwitch)
 local playerVehicleTracker = PlayerVehicleTracker.new(mainStateMachine, debugVehicleDetection)

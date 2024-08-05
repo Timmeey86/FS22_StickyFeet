@@ -142,7 +142,7 @@ function StickyFeetStateMachine:onPlayerMovementUpdated(isMoving)
             self:printState("player is now moving on an idle vehicle")
         elseif self.state == StickyFeetStateMachine.STATES.VEHICLE_MOVING then
             self:setState(StickyFeetStateMachine.STATES.BOTH_MOVING)
-            self:printState("player is no moving on a moving vehicle")
+            self:printState("player is now moving on a moving vehicle")
         end
     else
         if self.state == StickyFeetStateMachine.STATES.PLAYER_MOVING then
