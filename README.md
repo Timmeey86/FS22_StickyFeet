@@ -4,6 +4,8 @@
 
 This is a mod for Farming Simulator 22 which allows you to stay on moving vehicles without falling off.
 
+This is a beta version which is currently in the testing stage. Expect bugs.
+
 ## Videos
 
 Since videos can best explain this mod:
