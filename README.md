@@ -2,9 +2,28 @@
 
 ## Mod description
 
-This is a mod for Farming Simulator 22 which allows you to stay on moving vehicles without falling off.
+This mod makes your feet stick to moving vehicles/trailers/implements so you no longer slide off while they are being driven by the AI or another player.
 
-This is a beta version which is currently in the testing stage. Expect bugs.
+The possibilities which are opened up by this still need to be explored, but some are:
+- Carrying your friends to the workplace in the back of a pickup truck or a trailer
+- Slowly driving across a field with small bales with a second player bringing them to the trailer and a third stacking them
+- Streamers can film from angles which are otherwise impossible (while the AI is working the field)
+- Stacking bales on a trailer in single player while letting the AI drive and using a baler which lifts bales up to the trailer
+
+The following features currently work:
+- Sticking to a moving trailer when the player is not moving
+- Walking around on a moving trailer (same speed in every direction)
+- Auto-rotating with the vehicle as it's turning (in first person view)
+- Jumping while on a moving trailer (you'll move as fast as the vehicle)
+- Jumping onto and off a trailer (your movement speed will not be affected by the vehicle, though)
+- Jumping between vehicles
+
+There are limitations, however:
+- High vehicle speeds can cause issues with this mod
+- High ping in multiplayer can cause issues, too
+- Picking up and dropping objects will not work properly at high speeds.
+- Other players (and the own player in third person view) are not being animated properly while moving on a moving trailer
+- Moving around the borders of a vehicle or pallets can be buggy
 
 ## Videos
 
