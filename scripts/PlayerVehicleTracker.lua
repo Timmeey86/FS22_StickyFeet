@@ -68,6 +68,21 @@ function PlayerVehicleTracker.applyMove(player, x, y, z)
     setTranslation(player.graphicsRootNode, x, y, z)
 end
 
+---Sends an event to the server, or broadcasts it when hosting a multiplayer game
+---@param player table @The player (should be the controlled player)
+---@param event table @The event to be sent
+function PlayerVehicleTracker.sendOrBroadcastEvent(player, event)
+    if g_server ~= nil then
+        -- We are either the host of a multiplayer game or in single player
+        -- g_server is also valid on a dedicated server, but the state machine won't be used there
+        -- Note: In single player, broadcastEvent will do nothing
+        g_server:broadcastEvent(event, nil, nil, player)
+    else
+        -- We are a client of either a hosted multiplayer game or a dedicated server. Send the event to the server
+        g_client:getServerConnection():sendEvent(event)
+    end
+end
+
 ---Force moves the player to the given location. This also stores network synchronisation values.
 ---@param player table @The player to be moved
 ---@param x number @The X coordinate of the target graphics root node position
@@ -80,27 +95,15 @@ function PlayerVehicleTracker:forceMovePlayer(player, x, y, z)
         if self.mainStateMachine.trackedVehicle ~= nil then
             vehicleId = self.mainStateMachine.trackedVehicle.id
         end
-        print(("%s: Moving player to %.3f/%.3f/%.3f. Tracked vehicle: %s"):format(MOD_NAME, x, y, z, tostring(vehicleId)))
     end
 
     PlayerVehicleTracker.applyMove(player, x, y, z)
+    player.wasForceMoved = true
 
-    if self.mainStateMachine.trackedVehicle and player == g_currentMission.player then
-
-        -- Synchronize the local coordinates (rather than global) to other network participants since by the time they receive the update, the global coordinates would be outdated already
-        local xl, yl, zl = worldToLocal(self.mainStateMachine.trackedVehicle.rootNode, x, y, z)
-        local event = PlayerMovementCorrectionEvent.new(player, self.mainStateMachine.trackedVehicle, { x = xl, y = yl, z = zl }, player.lastEstimatedForwardVelocity)
-
-        if g_server ~= nil then
-            -- We are either the host of a multiplayer game or in single player
-            -- g_server is also valid on a dedicated server, but the state machine won't be used there
-            -- Note: In single player, broadcastEvent will do nothing
-            g_server:broadcastEvent(event, nil, nil, player)
-        else
-            -- We are a client of either a hosted multiplayer game or a dedicated server. Send the event to the server
-            g_client:getServerConnection():sendEvent(event)
-        end
-    end
+    assert(player == g_currentMission.player)
+    -- Synchronize global coords to other network participants
+    local event = PlayerMovementCorrectionEvent.new(player, { x = x, y = y, z = z }, player.lastEstimatedForwardVelocity)
+    PlayerVehicleTracker.sendOrBroadcastEvent(player, event)
 end
 
 
@@ -111,11 +114,9 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
 
     -- Other players: Just move them along with the vehicle as long as that's possible
     -- Note: The additional check for the root node is required since it can be nil while the player is still connecting
-    if player.syncedLockVehicle ~= nil and player.syncedLockVehicle.rootNode ~= nil and player.syncedLockCoords ~= nil then
-        -- Convert from local vehicle coordinates to global coordinates
-        local x,y,z = localToWorld(player.syncedLockVehicle.rootNode, player.syncedLockCoords.x, player.syncedLockCoords.y, player.syncedLockCoords.z)
-        print(("%s: Synching position of player ID %d"):format(MOD_NAME, player.id))
-        PlayerVehicleTracker.applyMove(player, x, y, z)
+    if player.syncedGlobalCoords ~= nil then
+        assert(player ~= g_currentMission.player)
+        PlayerVehicleTracker.applyMove(player, player.syncedGlobalCoords.x, player.syncedGlobalCoords.y, player.syncedGlobalCoords.z)
     end
     -- Otherwise only handle the local client player
     if not player.isClient or player ~= g_currentMission.player then return end
@@ -137,6 +138,8 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
     -- If there is a vehicle, and only the vehicle is moving: Drag the player along with the vehicle so that they stick to the tracked location on the vehicle
     -- If both are moving, add the player movement vector to the vehicle vector and move the player to that calculated location
     local state = self.mainStateMachine.state
+    local playerWasForceMovedBefore = player.wasForceMoved
+    player.wasForceMoved = false
 
     if self.mainStateMachine.trackedVehicle == nil then
         player.trackedVehicleCoords = nil
@@ -231,6 +234,11 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
     end
 
     -- Nothing to do in other states
+
+    if playerWasForceMovedBefore and not player.wasForceMoved then
+        -- If there are other network participants, they need to be told to stop correcting the player position (especially the server)
+        PlayerVehicleTracker.sendOrBroadcastEvent(player, PlayerMovementCorrectionStopEvent.new(player))
+    end
 end
 
 function PlayerVehicleTracker:adjustAnimationParameters(player, dt)

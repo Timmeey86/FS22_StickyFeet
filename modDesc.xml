@@ -70,6 +70,7 @@ Dank geht an Loki_79 für das Teilen seines Wissens und die Hilfe beim Testen de
 
     <extraSourceFiles>
         <sourceFile filename="scripts/PlayerMovementCorrectionEvent.lua" />
+        <sourceFile filename="scripts/PlayerMovementCorrectionStopEvent.lua" />
         <sourceFile filename="scripts/StickyFeetStateMachine.lua" />
         <sourceFile filename="scripts/PlayerVehicleTracker.lua" />
         <sourceFile filename="scripts/VehicleMovementTracker.lua" />
