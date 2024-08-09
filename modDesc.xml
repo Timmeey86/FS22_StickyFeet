@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <modDesc descVersion="79">
     <author>Farmsim Tim (timmeey86)</author>
-    <version>0.0.3.0</version>
+    <version>0.0.4.0</version>
     <title>
         <en>Sticky Feet</en>
         <de>Klebrige Füße</de>
@@ -28,7 +28,8 @@ There are limitations, however:
 - High vehicle speeds can cause issues with this mod
 - High ping in multiplayer can cause issues, too
 - Picking up and dropping objects will not work properly at high speeds.
-- Other players (and the own player in third person view) are not being animated while moving on a moving trailer
+- Other players (and the own player in third person view) are not being animated properly while moving on a moving trailer
+- Moving around the borders of a vehicle or pallets can be buggy
 
 If you find any issues not listed here, please report them at https://github.com/Timmeey86/FS22_StickyFeet
 
@@ -55,7 +56,8 @@ Es gibt allerdings Einschränkungen:
 - Bei hohen Geschwindigkeiten funktionieren manche Dinge nicht mehr
 - Bei einem hohen Ping im Mehrspielermodus funktionieren ebenfalls Dinge nicht mehr
 - Das aufheben und fallen lassen von Objekten funktioniert bei hohen Geschwindigkeiten nicht richtig
-- Andere Spieler (und der eigene Spieler in der dritten Person Ansicht) werden nicht animiert während sie auf sich bewegenden Fahrzeugen herum laufen
+- Andere Spieler (und der eigene Spieler in der dritten Person Ansicht) werden nicht richtig animiert während sie auf sich bewegenden Fahrzeugen herum laufen
+- Am Rand von Fahrzeugen oder Paletten kann es zu Problemen kommen
 
 Falls ihr Probleme entdeckt, erstellt bitte ein Ticket auf https://github.com/Timmeey86/FS22_StickyFeet
 

@@ -165,6 +165,7 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
         or state == StickyFeetStateMachine.STATES.JUMPING_ONTO_VEHICLE
         or (previousVehicle ~= nil and self.mainStateMachine.trackedVehicle ~= previousVehicle)
         or (state == StickyFeetStateMachine.STATES.IDLE_ON_VEHICLE and self.mainStateMachine.previousState == StickyFeetStateMachine.STATES.PLAYER_MOVING)
+        or (state == StickyFeetStateMachine.STATES.VEHICLE_MOVING and player.trackedVehicleCoords == nil)
         then
 
         dbgPrint("Updating tracked vehicle coordinates since player is moving above a vehicle in some way (or because the vehicle changed)")
@@ -183,7 +184,9 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
 
         if (state == StickyFeetStateMachine.STATES.VEHICLE_MOVING and player.trackedVehicleCoords ~= nil) then
             dbgPrint("Moving player to target location")
+            self:overrideAnimationVelocity(player, 0) -- Stop movement animation since the player is stationary relative to the vehicle
             self:forceMovePlayer(player, targetX, targetY, targetZ)
+
             -- Rotate the player around the Y axis by the same amount the vehicle has rotated
             local dirX, _, dirZ = localDirectionToWorld(vehicle.rootNode, 0, 0, 1)
             local newRotation = MathUtil.getYRotationFromDirection(dirX, dirZ)
@@ -194,7 +197,7 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
             vehicle.previousRotation = newRotation
         end
 
-        -- If the vehicle is moving and the player is either moving, jumping up or falling down
+        -- If the vehicle is moving and the player is either moving, jumping up or falling down above a moving vehicle
         if self.mainStateMachine:playerIsMovingAboveMovingVehicle() then
             dbgPrint("Player is moving above vehicle - adding player vector to target coordinates")
             -- Calculate the desired player movement
@@ -243,6 +246,8 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
                 targetY = graphicsY
             end
             dbgPrint("Moving player to target location")
+            -- Apply an appropriate movement velocity relative to the vehicle
+            self:overrideAnimationVelocity(player, MathUtil.vector2Length(desiredSpeedX, desiredSpeedZ) / dtInSeconds)
             self:forceMovePlayer(player, targetX, targetY, targetZ)
         end
     end
@@ -255,28 +260,24 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
     end
 end
 
+---Overrides the animation velocity especially for other players in order to prevent them from looking as if they were running on the spot
+---@param player table @The player
+---@param dt number @The time delta (unused)
 function PlayerVehicleTracker:adjustAnimationParameters(player, dt)
-    if player.syncedForwardVelocity ~= nil and player.sycnedVelocitySwitch then
+    if player.syncedForwardVelocity ~= nil then
         -- Other players: Override the estimated forward velocity to e.g. stop them from having a running animation while they are stationary on a moving trailer
-        player.lastEstimatedForwardVelocity = player.syncedForwardVelocity
-        local params = player.model.animationInformation.parameters
-        params.forwardVelocity.value = player.syncedForwardVelocity
-        player.absForwardVelocity.value = player.syncedForwardVelocity
-        -- Reset the value so it is only applied once
-        player.sycnedVelocitySwitch = false
+        self:overrideAnimationVelocity(player, player.syncedForwardVelocity)
     end
 end
 
-function PlayerVehicleTracker:debugAnimationParameters(player, dt)
-
-    -- Single player and Multiplayer Clients (but not server)
-    if g_client then
-	    local params = player.model.animationInformation.parameters
-        local dbgString = ("V_fwd=%.3f, V_up=%.3f, V_yaw=%.3f, V_absYaw=%.3f, onGround=%s, inWater=%s, isCrouched=%s, v_absFwd=%.3f, isCloseToGround=%s"):
-            format(params.forwardVelocity.value, params.verticalVelocity.value, params.yawVelocity.value, params.absYawVelocity.value, params.onGround.value, params.inWater.value, params.isCrouched.value, params.absForwardVelocity.value, params.isCloseToGround.value)
-
-        DebugUtil.drawDebugNode(player.graphicsRootNode, dbgString, false)
-    end
+---Overrides the animation velocity with the given value.
+---@param player table @The player to be affected
+---@param velocity number @The velocity to be applied to the animation
+function PlayerVehicleTracker:overrideAnimationVelocity(player, velocity)
+    player.lastEstimatedForwardVelocity = velocity
+    local params = player.model.animationInformation.parameters
+    params.forwardVelocity.value = velocity
+    params.absForwardVelocity.value = velocity
 end
 
 ---This is called by the game engine when an object which matches the VEHICLE collision mask was found below the player

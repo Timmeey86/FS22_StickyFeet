@@ -28,9 +28,6 @@ Mission00.loadMission00Finished = Utils.appendedFunction(Mission00.loadMission00
     Player.updateAnimationParameters = Utils.prependedFunction(Player.updateAnimationParameters, function(player, dt)
         playerVehicleTracker:adjustAnimationParameters(player, dt)
     end)
-    Player.updateAnimationParameters = Utils.appendedFunction(Player.updateAnimationParameters, function(player, dt)
-        playerVehicleTracker:debugAnimationParameters(player, dt)
-    end)
 
     -- Track vehicle movement
     Vehicle.update = Utils.appendedFunction(Vehicle.update, function(vehicle, ...)
