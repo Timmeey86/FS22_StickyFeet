@@ -46,7 +46,9 @@ end
 
 ---Executes the event, and on the server, also broadcasts the event to all other clients
 function PlayerMovementCorrectionStopEvent:run(connection)
-    self.player.syncedGlobalCoords = nil
+    self.player.syncedLockVehicle = nil
+    self.player.syncedLockCoords = nil
+    self.player.syncedCoordsAreGlobalCoords = false
     self.player.syncedForwardVelocity = nil
 
     if not connection:getIsServer() then

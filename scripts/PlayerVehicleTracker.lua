@@ -95,14 +95,23 @@ function PlayerVehicleTracker:forceMovePlayer(player, x, y, z)
         if self.mainStateMachine.trackedVehicle ~= nil then
             vehicleId = self.mainStateMachine.trackedVehicle.id
         end
+        print(("%s: Moving player to %.3f/%.3f/%.3f. Tracked vehicle: %s"):format(MOD_NAME, x, y, z, tostring(vehicleId)))
     end
 
     PlayerVehicleTracker.applyMove(player, x, y, z)
     player.wasForceMoved = true
 
     assert(player == g_currentMission.player)
-    -- Synchronize global coords to other network participants
-    local event = PlayerMovementCorrectionEvent.new(player, { x = x, y = y, z = z }, player.lastEstimatedForwardVelocity)
+    -- Synchronize coords to other network participants
+    local event
+    if self.mainStateMachine.trackedVehicle ~= nil then
+        -- Player is in a state which has a vehicle
+        local xl, yl, zl = worldToLocal(self.mainStateMachine.trackedVehicle.rootNode, x, y, z)
+        event = PlayerMovementCorrectionEvent.fromVehicleCoords(player, self.mainStateMachine.trackedVehicle, { x = xl, y = yl, z = zl }, player.lastEstimatedForwardVelocity)
+    else
+        -- Player is not tracking a vehicle, but the position is being corrected anyway (maybe jumping off, or similar)
+        event = PlayerMovementCorrectionEvent.fromGlobalCoords(player, { x = x, y = y, z = z }, player.lastEstimatedForwardVelocity)
+    end
     PlayerVehicleTracker.sendOrBroadcastEvent(player, event)
 end
 
@@ -114,9 +123,14 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
 
     -- Other players: Just move them along with the vehicle as long as that's possible
     -- Note: The additional check for the root node is required since it can be nil while the player is still connecting
-    if player.syncedGlobalCoords ~= nil then
+    if player.syncedLockCoords ~= nil and (player.syncedCoordsAreGlobalCoords or (player.syncedLockVehicle ~= nil and player.syncedLockVehicle.rootNode ~= nil)) then
         assert(player ~= g_currentMission.player)
-        PlayerVehicleTracker.applyMove(player, player.syncedGlobalCoords.x, player.syncedGlobalCoords.y, player.syncedGlobalCoords.z)
+        local x, y, z = player.syncedLockCoords.x, player.syncedLockCoords.y, player.syncedLockCoords.z
+        if not player.syncedCoordsAreGlobalCoords then
+            -- Convert to global coords based on the position of the tracked vehicle
+            x, y, z = localToWorld(player.syncedLockVehicle.rootNode, x, y, z)
+        end
+        PlayerVehicleTracker.applyMove(player, x, y, z)
     end
     -- Otherwise only handle the local client player
     if not player.isClient or player ~= g_currentMission.player then return end
