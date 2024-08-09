@@ -25,11 +25,8 @@ Mission00.loadMission00Finished = Utils.appendedFunction(Mission00.loadMission00
         playerMovementStateMachine:checkMovementState(player)
         playerVehicleTracker:checkForVehicleBelow(player, dt)
     end)
-    Player.writeUpdateStream = Utils.appendedFunction(Player.writeUpdateStream, function(player, streamId, connection, dirtyMask)
-        playerVehicleTracker:after_player_writeUpdateStream(player, streamId, connection, dirtyMask)
-    end)
-    Player.readUpdateStream = Utils.appendedFunction(Player.readUpdateStream, function(player, streamId, timestamp, connection)
-        playerVehicleTracker:after_player_readUpdateStream(player, streamId, timestamp, connection)
+    Player.updateAnimationParameters = Utils.prependedFunction(Player.updateAnimationParameters, function(player, dt)
+        playerVehicleTracker:adjustAnimationParameters(player, dt)
     end)
 
     -- Track vehicle movement
