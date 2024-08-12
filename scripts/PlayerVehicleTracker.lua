@@ -8,30 +8,24 @@ local PlayerVehicleTracker_mt = Class(PlayerVehicleTracker)
 ---@param mainStateMachine table @The main state machine of the mod
 ---@param debugVehicleDetection boolean @True if additional logging shall be turned on in case of vehicle detection
 ---@return table @The new instance
-function PlayerVehicleTracker.new(mainStateMachine, debugVehicleDetection)
+function PlayerVehicleTracker.new(mainStateMachine, vehicleRaycastHelper, debugVehicleDetection)
     local self = setmetatable({}, PlayerVehicleTracker_mt)
     self.mainStateMachine = mainStateMachine
+    self.vehicleRaycastHelper = vehicleRaycastHelper
     self.debugVehicleDetection = debugVehicleDetection
     -- The current vehicle which was found by the algorithm. This is only valid temporarily
     self.lastVehicleMatch = nil
+    self.lastObjectMatch = nil
     return self
 end
 
 ---Finds the first vehicle below the given location
+---@param player table @The player which might have a vehicle below them
 ---@param x number @the X coordinate
 ---@param y number @the Y coordinate
 ---@param z number @the Z coordinate
-function PlayerVehicleTracker:updateTrackedVehicleAt(x,y,z)
-    -- Find the first vehicle below the player (that actually includes pallets)
-    self.lastVehicleMatch = nil
-    self.lastObjectMatch = nil
-    local collisionMask = CollisionFlag.STATIC_OBJECT + CollisionFlag.DYNAMIC_OBJECT + CollisionFlag.VEHICLE + CollisionFlag.PLAYER
-    dbgPrint(("Looking for vehicle at %.3f/%.3f/%.3f"):format(x,y,z))
-    -- Look 4 meters above and 10 below the player to account for jumping and being stuck inside a vehicle
-    local maxDistance = 14
-    raycastAll(x, y + 4, z, 0,-1,0, "vehicleRaycastCallback", maxDistance, self, collisionMask)
-
-    -- Update the state machine
+function PlayerVehicleTracker:updateTrackedVehicleAt(player, x,y,z)
+    self.lastVehicleMatch, self.lastObjectMatch = self.vehicleRaycastHelper:getVehicleBelowPlayer(player, x,y,z)
     local trackedVehicle = nil
     if self.lastVehicleMatch ~= nil then
         trackedVehicle = self.lastVehicleMatch.object
@@ -143,8 +137,20 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
     -- Find the first vehicle below the player
     local previousVehicle = self.mainStateMachine.trackedVehicle
     local playerWorldX, playerWorldY, playerWorldZ = player:getPositionData()
+    if (self.mainStateMachine.state == StickyFeetStateMachine.STATES.VEHICLE_MOVING or
+       self.mainStateMachine.state == StickyFeetStateMachine.STATES.BOTH_MOVING or
+       self.mainStateMachine.state == StickyFeetStateMachine.STATES.JUMPING_ABOVE_VEHICLE or
+       self.mainStateMachine.state == StickyFeetStateMachine.STATES.FALLING_ABOVE_VEHICLE) and
+       self.mainStateMachine.trackedVehicle ~= nil and player.trackedVehicleCoords ~= nil then
+    
+        -- If the state machine is in a state where the player needs to be dragged along:
+        -- The vehicle will have moved already, but not the player => Find out where the player would be moved, and check which vehicle is at that location.
+        -- Otherwise the player could jump up and down while running towards the edge of a pallet on a trailer, for example
+        dbgPrint("Adjusting vehicle search location")
+        playerWorldX, playerWorldY, playerWorldZ = localToWorld(self.mainStateMachine.trackedVehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y, player.trackedVehicleCoords.z)
+    end
     dbgPrint(("Updating tracked vehicle in :checkForVehicleBelow (default case) based on player pos %.3f/%.3f/%.3f"):format(playerWorldX, playerWorldY, playerWorldZ))
-    self:updateTrackedVehicleAt(playerWorldX, playerWorldY, playerWorldZ)
+    self:updateTrackedVehicleAt(player, playerWorldX, playerWorldY, playerWorldZ)
 
     -- Depending on the state, do different things:
     -- If there is no vehicle below the player, or neither player nor vehicle are moving, nothing has to be done
@@ -212,7 +218,7 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
             dbgPrint(("New target coordinates are %.3f/%.3f/%.3f based on vehicle ID %d"):format(targetX, targetY, targetZ, vehicle.id))
             -- Find the vehicle at those coordinates to check wether or not the location is still on the vehicle
             dbgPrint("Updating tracked vehicle in :checkForVehicleBelow ('player is moving' case)")
-            self:updateTrackedVehicleAt(targetX, targetY, targetZ)
+            self:updateTrackedVehicleAt(player, targetX, targetY, targetZ)
             state = self.mainStateMachine.state
             vehicle = self.mainStateMachine.trackedVehicle
             -- Note: if that location is no longer above a vehicle, the state machine will be in a NO_VEHICLE state now
@@ -278,31 +284,4 @@ function PlayerVehicleTracker:overrideAnimationVelocity(player, velocity)
     local params = player.model.animationInformation.parameters
     params.forwardVelocity.value = velocity
     params.absForwardVelocity.value = velocity
-end
-
----This is called by the game engine when an object which matches the VEHICLE collision mask was found below the player
----@param potentialVehicleId number @The ID of the object which was found
----@param x number @The world X coordinate of the match location
----@param y number @The world Y coordinate of the match location
----@param z number @The world Z coordinate of the match location
----@param distance number @The distance between the player and the match location
----@return boolean @False if the search should be stopped, true if it should be continued
-function PlayerVehicleTracker:vehicleRaycastCallback(potentialVehicleId, x, y, z, distance)
-    if potentialVehicleId ~= nil and potentialVehicleId ~= 0 then
-        local object = g_currentMission:getNodeObject(potentialVehicleId)
-        if object ~= nil and (object:isa(Vehicle)) then
-            self.lastVehicleMatch = { object = object, x = x, y = y, z = z, distance = distance }
-            if self.debugVehicleDetection then
-                print(("%s: Found vehicle with ID %d at %.3f/%.3f/%.3f, %.3fm below player location"):format(MOD_NAME, object.id, x, y, z, distance - g_currentMission.player.model.capsuleTotalHeight ))
-            end
-            -- Stop searching
-            return false
-        elseif object ~= nil and self.lastObjectMatch == nil and (object:isa(Bale) or object:isa(Player)) then
-            self.lastObjectMatch = { object = object, x = x, y = y, z = z, distance = distance }
-            -- Continue searching anyway
-        end
-    end
-
-    -- Any other case: continue searching
-    return true
 end

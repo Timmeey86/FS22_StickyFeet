@@ -7,7 +7,8 @@ local debugStateMachineSwitch = false
 local debugSwitch = false
 local debugVehicleDetection = false
 local mainStateMachine = StickyFeetStateMachine.new(debugStateMachineSwitch)
-local playerVehicleTracker = PlayerVehicleTracker.new(mainStateMachine, debugVehicleDetection)
+local vehicleRaycastHelper = VehicleRaycastHelper.new(debugVehicleDetection)
+local playerVehicleTracker = PlayerVehicleTracker.new(mainStateMachine, vehicleRaycastHelper, debugVehicleDetection)
 local vehicleMovementTracker = VehicleMovementTracker.new(mainStateMachine)
 local playerMovementStateMachine = PlayerMovementStateMachine.new(mainStateMachine)
 function dbgPrint(text)

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <modDesc descVersion="79">
     <author>Farmsim Tim (timmeey86)</author>
-    <version>0.0.4.0</version>
+    <version>0.0.5.0</version>
     <title>
         <en>Sticky Feet</en>
         <de>Klebrige Füße</de>
@@ -29,7 +29,6 @@ There are limitations, however:
 - High ping in multiplayer can cause issues, too
 - Picking up and dropping objects will not work properly at high speeds.
 - Other players (and the own player in third person view) are not being animated properly while moving on a moving trailer
-- Moving around the borders of a vehicle or pallets can be buggy
 
 If you find any issues not listed here, please report them at https://github.com/Timmeey86/FS22_StickyFeet
 
@@ -57,7 +56,6 @@ Es gibt allerdings Einschränkungen:
 - Bei einem hohen Ping im Mehrspielermodus funktionieren ebenfalls Dinge nicht mehr
 - Das aufheben und fallen lassen von Objekten funktioniert bei hohen Geschwindigkeiten nicht richtig
 - Andere Spieler (und der eigene Spieler in der dritten Person Ansicht) werden nicht richtig animiert während sie auf sich bewegenden Fahrzeugen herum laufen
-- Am Rand von Fahrzeugen oder Paletten kann es zu Problemen kommen
 
 Falls ihr Probleme entdeckt, erstellt bitte ein Ticket auf https://github.com/Timmeey86/FS22_StickyFeet
 
@@ -74,6 +72,7 @@ Dank geht an Loki_79 für das Teilen seines Wissens und die Hilfe beim Testen de
         <sourceFile filename="scripts/PlayerMovementCorrectionEvent.lua" />
         <sourceFile filename="scripts/PlayerMovementCorrectionStopEvent.lua" />
         <sourceFile filename="scripts/StickyFeetStateMachine.lua" />
+        <sourceFile filename="scripts/VehicleRaycastHelper.lua" />
         <sourceFile filename="scripts/PlayerVehicleTracker.lua" />
         <sourceFile filename="scripts/VehicleMovementTracker.lua" />
         <sourceFile filename="scripts/PlayerMovementStateMachine.lua" />
