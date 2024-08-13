@@ -29,11 +29,11 @@ There are limitations, however:
 - High ping in multiplayer can cause issues, too
 - Picking up and dropping objects will not work properly at high speeds.
 - Other players (and the own player in third person view) are not being animated properly while moving on a moving trailer
+- Players sometimes zap up and down when standing close to the borders of a pallet on a moving vehicle
 
 If you find any issues not listed here, please report them at https://github.com/Timmeey86/FS22_StickyFeet
 
-Big thanks to Loki_79 for sharing his experience and helping in testing this mod
-]]></en>
+Big thanks to Loki_79 for sharing his experience and helping in testing this mod]]></en>
 <de><![CDATA[Diese Mod sorgt dafür, dass eure Füße an sich bewegenden Fahrzeugen/Anhängern/Geräten kleben bleiben, sodass ihr nicht herunter rutscht, während diese von der KI oder von anderen Spielern gefahren werden.
 
 Die Möglichkeiten, die das bietet, müssen noch erforscht werden, aber manche davon sind:
@@ -41,7 +41,6 @@ Die Möglichkeiten, die das bietet, müssen noch erforscht werden, aber manche d
 - Ein Spieler kann langsam über ein Feld mit kleinen Ballen fahren während ein zweiter Spieler sie zum Anhänger bringt und ein dritter sie stapelt
 - Streamer können damit Kameraperspektiven erreichen, die sonst nicht möglich wären (während die KI das Feld bearbeitet)
 - Im Einzelspieler-Modus Ballen auf einem Anhänger stapeln während die AI den Schlepper fährt und eine Ballenpresse verwendet wird, die die Ballen auf den Anhänger hoch befördert
-
 
 Die folgenden Dinge funktionieren momentan:
 - Auf einem sich bewegenden Anhänger bleiben während der Spieler sich nicht bewegt
@@ -56,11 +55,11 @@ Es gibt allerdings Einschränkungen:
 - Bei einem hohen Ping im Mehrspielermodus funktionieren ebenfalls Dinge nicht mehr
 - Das aufheben und fallen lassen von Objekten funktioniert bei hohen Geschwindigkeiten nicht richtig
 - Andere Spieler (und der eigene Spieler in der dritten Person Ansicht) werden nicht richtig animiert während sie auf sich bewegenden Fahrzeugen herum laufen
+- Spieler zappeln manchmal hoch und runter wenn sie am Rand einer Palette auf einem Fahrzeug stehen, das sich bewegt
 
-Falls ihr Probleme entdeckt, erstellt bitte ein Ticket auf https://github.com/Timmeey86/FS22_StickyFeet
+Falls ihr Probleme entdeckt, die hier nicht gelistet sind, erstellt bitte ein Ticket auf https://github.com/Timmeey86/FS22_StickyFeet
 
-Dank geht an Loki_79 für das Teilen seines Wissens und die Hilfe beim Testen der Mod
-]]>
+Dank geht an Loki_79 für das Teilen seines Wissens und die Hilfe beim Testen der Mod]]>
 </de>
     </description>
     

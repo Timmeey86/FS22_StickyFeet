@@ -43,7 +43,8 @@ function VehicleRaycastHelper:getVehicleBelowPlayer(player, x,y,z)
     end
 
     -- Raycast at every point and remember the topmost vehicle and bale
-    self.lastVehicleMatch = nil
+    self.topmostVehicleMatch = nil
+    self.bottommostVehicleMatch = nil
     self.lastObjectMatch = nil
     local collisionMask = CollisionFlag.STATIC_OBJECT + CollisionFlag.DYNAMIC_OBJECT + CollisionFlag.VEHICLE + CollisionFlag.PLAYER
     -- Look 4 meters above and 10 below the player to account for jumping and being stuck inside a vehicle
@@ -56,16 +57,17 @@ function VehicleRaycastHelper:getVehicleBelowPlayer(player, x,y,z)
         raycastAll(location.x, location.y + topBuffer, location.z, 0, -1, 0, "vehicleRaycastCallback", maxDistance, self, collisionMask)
     end
 
-    -- replace any found X/Z coordinates by the original player location
-    if self.lastVehicleMatch ~= nil then
-        self.lastVehicleMatch.x = x
-        self.lastVehicleMatch.z = z
+    -- replace any found X/Z coordinates by the original player location and use Y of the topmost vehicle match
+    if self.bottommostVehicleMatch ~= nil then
+        self.bottommostVehicleMatch.x = x
+        self.bottommostVehicleMatch.y = self.topmostVehicleMatch.y
+        self.bottommostVehicleMatch.z = z
     end
     if self.lastObjectMatch ~= nil then
         self.lastObjectMatch.x = x
         self.lastObjectMatch.z = z
     end
-    return self.lastVehicleMatch, self.lastObjectMatch
+    return self.bottommostVehicleMatch, self.lastObjectMatch
 end
 
 ---This is called by the game engine when an object which matches the VEHICLE collision mask was found below the player
@@ -80,15 +82,18 @@ function VehicleRaycastHelper:vehicleRaycastCallback(potentialVehicleId, x, y, z
         local object = g_currentMission:getNodeObject(potentialVehicleId)
         if object ~= nil and (object:isa(Vehicle)) then
             -- Update the vehicle match only if this is the topmost match so far
-            if self.lastVehicleMatch == nil or y > self.lastVehicleMatch.y then
-                self.lastVehicleMatch = { object = object, x = x, y = y, z = z, distance = distance }
+            if self.topmostVehicleMatch == nil or y > self.topmostVehicleMatch.y then
+                self.topmostVehicleMatch = { object = object, x = x, y = y, z = z, distance = distance }
                 if self.debugVehicleDetection then
-                    print(("%s: Found vehicle with ID %d at %.3f/%.3f/%.3f, %.3fm below player location"):format(MOD_NAME, object.id, x, y, z, distance - g_currentMission.player.model.capsuleTotalHeight/2 - 4 ))
+                    print(("%s: Found new topmost vehicle with ID %d at %.3f/%.3f/%.3f, %.3fm below player location"):format(MOD_NAME, object.id, x, y, z, distance - g_currentMission.player.model.capsuleTotalHeight/2 - 4 ))
                 end
-                -- Stop searching
-                return false
-            else
-                print(("%s: Ignoring vehicle match with ID %d at %.3f/%.3f/%.3f because it is lower than an earlier match"):format(MOD_NAME, object.id, x, y, z))
+                -- Continue searching anyway in order to find the bottommost vehicle, too
+            end
+            if self.bottommostVehicleMatch == nil or y < self.bottommostVehicleMatch.y then
+                self.bottommostVehicleMatch = { object = object, x = x, y = y, z = z, distance = distance }
+                if self.debugVehicleDetection then
+                    print(("%s: Found new bottommost vehicle with ID %d at %.3f/%.3f/%.3f, %.3fm below player location"):format(MOD_NAME, object.id, x, y, z, distance - g_currentMission.player.model.capsuleTotalHeight/2 - 4 ))
+                end
             end
         elseif object ~= nil and (object:isa(Bale)) and (self.lastObjectMatch == nil or y > self.lastObjectMatch.y) then
 
