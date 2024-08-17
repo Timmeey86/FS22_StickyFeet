@@ -74,20 +74,27 @@ end
 ---@param y number @The world Y coordinate of the match location
 ---@param z number @The world Z coordinate of the match location
 ---@param distance number @The distance between the player and the match location
+---@param nx number @The X part of a unit vector along the local X axis
+---@param ny number @The Y part of a unit vector along the local X axis
+---@param nz number @The Z part of a unit vector along the local X axis
+---@param subShapeIndex number @The index of the shape which was found
+---@param shapeId number @The ID of the shape which was found
+---@param isLast boolean @True if this is the last match
 ---@return boolean @False if the search should be stopped, true if it should be continued
-function VehicleRaycastHelper:vehicleRaycastCallback(potentialVehicleId, x, y, z, distance)
+function VehicleRaycastHelper:vehicleRaycastCallback(potentialVehicleId, x, y, z, distance, nx,ny,nz, subShapeIndex, shapeId, isLast)
     if potentialVehicleId ~= nil and potentialVehicleId ~= 0 then
         local object = g_currentMission:getNodeObject(potentialVehicleId)
-        if object ~= nil and (object:isa(Vehicle)) then
+        if object ~= nil and object:isa(Vehicle) and CollisionFlag.getHasFlagSet(shapeId, CollisionFlag.VEHICLE) then
             -- Update the vehicle match only if this is the topmost match so far
             if self.lastVehicleMatch == nil or y > self.lastVehicleMatch.y then
+
                 self.lastVehicleMatch = { object = object, x = x, y = y, z = z, distance = distance }
                 if self.debugVehicleDetection then
                     print(("%s: Found vehicle with ID %d at %.3f/%.3f/%.3f, %.3fm below player location"):format(MOD_NAME, object.id, x, y, z, distance - g_currentMission.player.model.capsuleTotalHeight/2 - 4 ))
                 end
                 -- Stop searching
                 return false
-            else
+            elseif  self.debugVehicleDetection then
                 print(("%s: Ignoring vehicle match with ID %d at %.3f/%.3f/%.3f because it is lower than an earlier match"):format(MOD_NAME, object.id, x, y, z))
             end
         elseif object ~= nil and (object:isa(Bale)) and (self.lastObjectMatch == nil or y > self.lastObjectMatch.y) then
