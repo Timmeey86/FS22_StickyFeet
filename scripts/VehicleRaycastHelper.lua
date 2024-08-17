@@ -29,6 +29,7 @@ function VehicleRaycastHelper:getVehicleBelowPlayer(player, x,y,z)
 
     -- Calculate four points in front of, behind, left and right of the player
     local coords = {
+        center = { x = x, y = y, z = z },
         back = { x = x - xx, y = y - xy, z = z - xz },
         front = { x = x + xx, y = y + xy, z = z + xz },
         left = { x = x - zx, y = y - zy, z = z - zz },
@@ -36,6 +37,7 @@ function VehicleRaycastHelper:getVehicleBelowPlayer(player, x,y,z)
     }
     if self.debugVehicleDetection then
         local yx,yy,yz = localDirectionToWorld(player.graphicsRootNode, 0,radius,0)
+        DebugUtil.drawDebugGizmoAtWorldPos(coords["center"].x, coords["center"].y, coords["center"].z, zx,zy,zz, yx,yy,yz, "Center", false, {1,1,1})
         DebugUtil.drawDebugGizmoAtWorldPos(coords["back"].x, coords["back"].y, coords["back"].z, zx,zy,zz, yx,yy,yz, "Back", false, {1,1,1})
         DebugUtil.drawDebugGizmoAtWorldPos(coords["front"].x, coords["front"].y, coords["front"].z, zx,zy,zz, yx,yy,yz, "Front", false, {1,1,1})
         DebugUtil.drawDebugGizmoAtWorldPos(coords["left"].x, coords["left"].y, coords["left"].z, zx,zy,zz, yx,yy,yz, "Left", false, {1,1,1})
