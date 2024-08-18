@@ -163,10 +163,6 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
 
     if self.mainStateMachine.trackedVehicle == nil then
         player.trackedVehicleCoords = nil
-        if previousVehicle ~= nil then
-            -- Reset rotation so it doesn't get used when the player hops on the same vehicle again
-            previousVehicle.previousRotation = nil
-        end
     elseif state == StickyFeetStateMachine.STATES.PLAYER_MOVING
         or state == StickyFeetStateMachine.STATES.JUMPING_ONTO_VEHICLE
         or (previousVehicle ~= nil and self.mainStateMachine.trackedVehicle ~= previousVehicle)

@@ -129,6 +129,10 @@ function StickyFeetStateMachine:onVehicleBelowPlayerUpdated(trackedVehicle)
     if self.debugStateMachineSwitch and self.trackedVehicle ~= nil and trackedVehicle ~= nil and self.trackedVehicle ~= trackedVehicle then
         print(("%s: Tracked vehicle has changed from %d to %d"):format(MOD_NAME, self.trackedVehicle.id, trackedVehicle.id))
     end
+    if self.trackedVehicle ~= nil and self.trackedVehicle ~= trackedVehicle then
+        -- Reset any stored rotation whenever the tracked vehicle changes
+        self.trackedVehicle.previousRotation = nil
+    end
     -- Remember the tracked vehicle in any case
     self.trackedVehicle = trackedVehicle
 end
