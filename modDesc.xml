@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <modDesc descVersion="79">
     <author>Farmsim Tim (timmeey86)</author>
-    <version>0.0.5.0</version>
+    <version>0.0.6.0</version>
     <title>
         <en>Sticky Feet</en>
         <de>Klebrige Füße</de>
@@ -77,27 +77,4 @@ Dank geht an Loki_79 für das Teilen seines Wissens und die Hilfe beim Testen de
         <sourceFile filename="scripts/PlayerMovementStateMachine.lua" />
         <sourceFile filename="scripts/StickyFeet.lua" />
     </extraSourceFiles>
-
-    <actions>
-        <action name="RA_DEBUG_BUTTON" axis="HALF"/>
-        <action name="RA_DEBUG_BUTTON2" axis="HALF"/>
-    </actions>
-    <inputBinding>
-        <actionBinding action="RA_DEBUG_BUTTON">
-            <binding device="KB_MOUSE_DEFAULT" input="KEY_z"/>
-        </actionBinding>
-        <actionBinding action="RA_DEBUG_BUTTON2">
-            <binding device="KB_MOUSE_DEFAULT" input="KEY_x"/>
-        </actionBinding>
-    </inputBinding>
-    <l10n>
-        <text name="input_RA_DEBUG_BUTTON">
-            <en>Debug Button</en>
-            <de>Debug Knopf</de>
-        </text>
-        <text name="input_RA_DEBUG_BUTTON2">
-            <en>Debug Button2</en>
-            <de>Debug Knopf2</de>
-        </text>
-    </l10n>
 </modDesc>
