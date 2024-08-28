@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <modDesc descVersion="80">
     <author>Farmsim Tim (timmeey86)</author>
-    <version>0.9.0.1</version>
+    <version>1.0.0.0</version>
     <title>
         <en>Sticky Feet</en>
         <de>Klebrige Füße</de>
@@ -25,8 +25,6 @@ The following features currently work:
 - Jumping between vehicles
 
 There are limitations, however:
-- High vehicle speeds can cause issues with this mod
-- High ping in multiplayer can cause issues, too
 - Picking up and dropping objects will not work properly at high speeds.
 - Players sometimes bounce up and down when standing close to the borders of a pallet on a moving vehicle
 
@@ -50,8 +48,6 @@ Die folgenden Dinge funktionieren momentan:
 - Von einem auf ein anderes Fahrzeug hüpfen
 
 Es gibt allerdings Einschränkungen:
-- Bei hohen Geschwindigkeiten funktionieren manche Dinge nicht mehr
-- Bei einem hohen Ping im Mehrspielermodus funktionieren ebenfalls Dinge nicht mehr
 - Das aufheben und fallen lassen von Objekten funktioniert bei hohen Geschwindigkeiten nicht richtig
 - Spieler zappeln manchmal hoch und runter wenn sie am Rand einer Palette auf einem Fahrzeug stehen, das sich bewegt
 
