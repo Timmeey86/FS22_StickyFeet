@@ -109,13 +109,9 @@ function PlayerVehicleTracker:forceMovePlayer(player, x, y, z)
     PlayerVehicleTracker.sendOrBroadcastEvent(player, event)
 end
 
-
----Updates internal states based on whether or not a vehicle is below that player.
----@param player table @The player to be inspected
----@param dt number @The time delta since the previous call
-function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
-
-    -- Other players: Just move them along with the vehicle as long as that's possible
+---Updates the model of another multiplayer participant on each client, if necessary
+---@param player table @The player to be udpated
+function PlayerVehicleTracker.updateRemotePlayerModel(player)
     -- Note: The additional check for the root node is required since it can be nil while the player is still connecting
     if player.syncedLockCoords ~= nil and (player.syncedCoordsAreGlobalCoords or (player.syncedLockVehicle ~= nil and player.syncedLockVehicle.rootNode ~= nil)) then
         assert(player ~= g_currentMission.player)
@@ -125,7 +121,20 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
             x, y, z = localToWorld(player.syncedLockVehicle.rootNode, x, y, z)
         end
         PlayerVehicleTracker.applyMove(player, x, y, z)
+        -- Flag the player object as dirty again so it keeps updating this player on our local client as long as they are locked to the vehicle.
+        -- That way, we get can use the lock coordinates to move the player ourselves, which results in a way smoother player movement than reacting only to server update ticks.
+        player:raiseActive()
     end
+end
+
+---Updates internal states based on whether or not a vehicle is below that player.
+---@param player table @The player to be inspected
+---@param dt number @The time delta since the previous call
+function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
+
+    -- Other players: Just move them along with the vehicle as long as that's possible
+    PlayerVehicleTracker.updateRemotePlayerModel(player)
+
     -- Otherwise only handle the local client player
     if not player.isClient or player ~= g_currentMission.player then return end
 
@@ -142,7 +151,7 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
        self.mainStateMachine.state == StickyFeetStateMachine.STATES.JUMPING_ABOVE_VEHICLE or
        self.mainStateMachine.state == StickyFeetStateMachine.STATES.FALLING_ABOVE_VEHICLE) and
        self.mainStateMachine.trackedVehicle ~= nil and player.trackedVehicleCoords ~= nil then
-    
+
         -- If the state machine is in a state where the player needs to be dragged along:
         -- The vehicle will have moved already, but not the player => Find out where the player would be moved, and check which vehicle is at that location.
         -- Otherwise the player could jump up and down while running towards the edge of a pallet on a trailer, for example

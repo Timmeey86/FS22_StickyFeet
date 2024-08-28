@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
-<modDesc descVersion="79">
+<modDesc descVersion="80">
     <author>Farmsim Tim (timmeey86)</author>
-    <version>0.0.6.0</version>
+    <version>0.9.0.1</version>
     <title>
         <en>Sticky Feet</en>
         <de>Klebrige Füße</de>
@@ -10,7 +10,7 @@
     <description>
         <en><![CDATA[This mod makes your feet stick to moving vehicles/trailers/implements so you no longer slide off while they are being driven by the AI or another player.
 
-The possibilities which are opened up by this still need to be explored, but some are:
+The possibilities which are opened up by this still need to fully be explored, but some are:
 - Carrying your friends to the workplace in the back of a pickup truck or a trailer
 - Slowly driving across a field with small bales with a second player bringing them to the trailer and a third stacking them
 - Streamers can film from angles which are otherwise impossible (while the AI is working the field)
@@ -28,15 +28,14 @@ There are limitations, however:
 - High vehicle speeds can cause issues with this mod
 - High ping in multiplayer can cause issues, too
 - Picking up and dropping objects will not work properly at high speeds.
-- Other players (and the own player in third person view) are not being animated properly while moving on a moving trailer
-- Players sometimes zap up and down when standing close to the borders of a pallet on a moving vehicle
+- Players sometimes bounce up and down when standing close to the borders of a pallet on a moving vehicle
 
 If you find any issues not listed here, please report them at https://github.com/Timmeey86/FS22_StickyFeet
 
 Big thanks to Loki_79 for sharing his experience and helping in testing this mod]]></en>
 <de><![CDATA[Diese Mod sorgt dafür, dass eure Füße an sich bewegenden Fahrzeugen/Anhängern/Geräten kleben bleiben, sodass ihr nicht herunter rutscht, während diese von der KI oder von anderen Spielern gefahren werden.
 
-Die Möglichkeiten, die das bietet, müssen noch erforscht werden, aber manche davon sind:
+Die Möglichkeiten, die das bietet, müssen noch weiter erforscht werden, aber manche davon sind:
 - Ihr könnt eure Freunde auf der Ladefläche eines Pickups oder in einem Anhänger zur Arbeit fahren
 - Ein Spieler kann langsam über ein Feld mit kleinen Ballen fahren während ein zweiter Spieler sie zum Anhänger bringt und ein dritter sie stapelt
 - Streamer können damit Kameraperspektiven erreichen, die sonst nicht möglich wären (während die KI das Feld bearbeitet)
@@ -54,7 +53,6 @@ Es gibt allerdings Einschränkungen:
 - Bei hohen Geschwindigkeiten funktionieren manche Dinge nicht mehr
 - Bei einem hohen Ping im Mehrspielermodus funktionieren ebenfalls Dinge nicht mehr
 - Das aufheben und fallen lassen von Objekten funktioniert bei hohen Geschwindigkeiten nicht richtig
-- Andere Spieler (und der eigene Spieler in der dritten Person Ansicht) werden nicht richtig animiert während sie auf sich bewegenden Fahrzeugen herum laufen
 - Spieler zappeln manchmal hoch und runter wenn sie am Rand einer Palette auf einem Fahrzeug stehen, das sich bewegt
 
 Falls ihr Probleme entdeckt, die hier nicht gelistet sind, erstellt bitte ein Ticket auf https://github.com/Timmeey86/FS22_StickyFeet
