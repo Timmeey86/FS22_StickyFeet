@@ -57,9 +57,11 @@ end
 ---@param y number @The Y coordinate of the target graphics root node position
 ---@param z number @The Z coordinate of the target graphics root node position
 function PlayerVehicleTracker.applyMove(player, x, y, z)
-    player:moveToAbsoluteInternal(x, y + player.model.capsuleTotalHeight * 0.5, z)
+    setTranslation(player.capsuleController.rootNode, x, y, z)
+    --player:moveToAbsoluteInternal(x, y + player.capsuleController.height * 0.5, z)
     -- Graphics root node should always be below the player, but moveToAbsoluteInternal moves it to the same point
-    setTranslation(player.graphicsRootNode, x, y, z)
+    -- TODO
+    --setTranslation(player:getCurrentRootNode(), x, y, z)
 end
 
 ---Sends an event to the server, or broadcasts it when hosting a multiplayer game
@@ -95,7 +97,7 @@ function PlayerVehicleTracker:forceMovePlayer(player, x, y, z)
     PlayerVehicleTracker.applyMove(player, x, y, z)
     player.wasForceMoved = true
 
-    assert(player == g_currentMission.player)
+    assert(player == g_localPlayer)
     -- Synchronize coords to other network participants
     local event
     if self.mainStateMachine.trackedVehicle ~= nil then
@@ -114,7 +116,7 @@ end
 function PlayerVehicleTracker.updateRemotePlayerModel(player)
     -- Note: The additional check for the root node is required since it can be nil while the player is still connecting
     if player.syncedLockCoords ~= nil and (player.syncedCoordsAreGlobalCoords or (player.syncedLockVehicle ~= nil and player.syncedLockVehicle.rootNode ~= nil)) then
-        assert(player ~= g_currentMission.player)
+        assert(player ~= g_localPlayer)
         local x, y, z = player.syncedLockCoords.x, player.syncedLockCoords.y, player.syncedLockCoords.z
         if not player.syncedCoordsAreGlobalCoords then
             -- Convert to global coords based on the position of the tracked vehicle
@@ -136,16 +138,18 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
     PlayerVehicleTracker.updateRemotePlayerModel(player)
 
     -- Otherwise only handle the local client player
-    if not player.isClient or player ~= g_currentMission.player then return end
+    if not player.isClient or player ~= g_localPlayer then return end
 
     -- Check if the player is active in the game or sitting in a vehicle (or other reasons not to be "entered")
-    self.mainStateMachine:onPlayerIsEnteredStateUpdated(player.isEntered)
-    -- If the player is not enterd, they can by definition not be on a vehicle, so we can skip the remaining function
-    if not player.isEntered then return end
+    -- TODO: State machine could probably be connected to player:onEnterVehicle, onEnterVehicleAsPassenger etc
+    local isInVehicle = player:getIsInVehicle()
+    self.mainStateMachine:onPlayerIsInVehicleStateUpdated(isInVehicle)
+    -- The player can't be on a vehicle if they're in a vehicle => skip the remaining code
+    if isInVehicle then return end
 
     -- Find the first vehicle below the player
     local previousVehicle = self.mainStateMachine.trackedVehicle
-    local playerWorldX, playerWorldY, playerWorldZ = player:getPositionData()
+    local playerWorldX, playerWorldY, playerWorldZ = player:getPosition()
     if (self.mainStateMachine.state == StickyFeetStateMachine.STATES.VEHICLE_MOVING or
        self.mainStateMachine.state == StickyFeetStateMachine.STATES.BOTH_MOVING or
        self.mainStateMachine.state == StickyFeetStateMachine.STATES.JUMPING_ABOVE_VEHICLE or
@@ -203,7 +207,8 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
             local newRotation = MathUtil.getYRotationFromDirection(dirX, dirZ)
             if vehicle.previousRotation ~= nil then
                 local rotationDiff = newRotation - vehicle.previousRotation
-                player:setRotation(player.rotX, player.rotY + rotationDiff)
+                -- TODO - Player doesn't have a rotation any more, just `player.graphicsState.rotationVelocity`
+                --player:setRotation(player.rotX, player.rotY + rotationDiff)
             end
             vehicle.previousRotation = newRotation
         end
@@ -212,7 +217,8 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
         if self.mainStateMachine:playerIsMovingAboveMovingVehicle() then
             dbgPrint("Player is moving above vehicle - adding player vector to target coordinates")
             -- Calculate the desired player movement
-            local desiredSpeed = player:getDesiredSpeed()
+            -- TODO: There is now only player.graphicsState.absSpeed and player.moveer.currentSpeed etc. Find out how that works
+            --[[local desiredSpeed = player:getDesiredSpeed()
             local dtInSeconds = dt * 0.001
             local desiredSpeedX = player.motionInformation.currentWorldDirX * desiredSpeed * dtInSeconds
             local desiredSpeedZ = player.motionInformation.currentWorldDirZ * desiredSpeed * dtInSeconds
@@ -236,7 +242,7 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
                 dbgPrint(("Final target coordinates are %.3f/%.3f/%.3f based on vehicle ID %d"):format(targetX, targetY, targetZ, vehicle.id))
                 -- Adjust for jumping or falling
                 if state == StickyFeetStateMachine.STATES.JUMPING_ABOVE_VEHICLE or state == StickyFeetStateMachine.STATES.FALLING_ABOVE_VEHICLE then
-                    local _, graphicsY, _ = localToWorld(player.graphicsRootNode, 0, 0, 0)
+                    local _, graphicsY, _ = localToWorld(player.capsuleController.rootNode, 0, 0, 0)
                     local adjustedYCoordinate = graphicsY + player.motionInformation.currentSpeedY * dtInSeconds
                     if adjustedYCoordinate > targetY then
                         targetY = adjustedYCoordinate
@@ -253,13 +259,14 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
                 dbgPrint("Target location is no longer above vehicle")
                 -- Keep Y coordinate so the next force move does not force the player down on the trailer again
                 -- This is required only once since the state machine will prevent further position manipulations from happening
-                local _, graphicsY, _ = localToWorld(player.graphicsRootNode, 0, 0, 0)
+                local _, graphicsY, _ = localToWorld(player.capsuleController.rootNode, 0, 0, 0)
                 targetY = graphicsY
             end
             dbgPrint("Moving player to target location")
             -- Apply an appropriate movement velocity relative to the vehicle
             self:overrideAnimationVelocity(player, MathUtil.vector2Length(desiredSpeedX, desiredSpeedZ) / dtInSeconds)
             self:forceMovePlayer(player, targetX, targetY, targetZ)
+            ]]--
         end
     end
 
@@ -285,8 +292,10 @@ end
 ---@param player table @The player to be affected
 ---@param velocity number @The velocity to be applied to the animation
 function PlayerVehicleTracker:overrideAnimationVelocity(player, velocity)
+    -- TODO: Probably need velocity X, Y and Z
+    -- player.graphicsComponent.animationParameters.relativeVelocityX/Y/Z, movementDirX/Y/Z
     player.lastEstimatedForwardVelocity = velocity
-    local params = player.model.animationInformation.parameters
-    params.forwardVelocity.value = velocity
-    params.absForwardVelocity.value = velocity
+    --local params = player.model.animationInformation.parameters
+    --params.forwardVelocity.value = velocity
+    --params.absForwardVelocity.value = velocity
 end

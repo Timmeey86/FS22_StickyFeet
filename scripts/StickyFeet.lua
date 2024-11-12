@@ -3,9 +3,9 @@ MOD_NAME = g_currentModName or "unknown"
 
 StickyFeet = {}
 
-local debugStateMachineSwitch = false
-local debugSwitch = false
-local debugVehicleDetection = false
+local debugStateMachineSwitch = true
+local debugSwitch = true
+local debugVehicleDetection = true
 local mainStateMachine = StickyFeetStateMachine.new(debugStateMachineSwitch)
 local vehicleRaycastHelper = VehicleRaycastHelper.new(debugVehicleDetection)
 local playerVehicleTracker = PlayerVehicleTracker.new(mainStateMachine, vehicleRaycastHelper, debugVehicleDetection)
@@ -38,7 +38,7 @@ Mission00.loadMission00Finished = Utils.appendedFunction(Mission00.loadMission00
     if debugVehicleDetection then
         -- Draw vehicle root nodes to help understand debugging output bettter
         BaseMission.draw = Utils.appendedFunction(BaseMission.draw, function(baseMission)
-            for _, vehicle in pairs(baseMission.vehicles) do
+            for _, vehicle in pairs(baseMission.vehicleSystem.vehicles) do
                 DebugUtil.drawDebugNode(vehicle.rootNode, tostring(vehicle.id), false)
             end
         end)

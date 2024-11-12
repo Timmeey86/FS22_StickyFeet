@@ -25,18 +25,24 @@ end
 function PlayerMovementStateMachine:checkMovementState(player)
     -- Remarks: updateTick gets called on both server and client, with different player IDs, but the player states seem to always be false on the server
 
-    if player.isClient and player == g_currentMission.player then
-        if player.playerStateMachine.playerStateWalk.isActive
-            or player.playerStateMachine.playerStateRun.isActive
-            or player.playerStateMachine.playerStateJump.isActive
-            or player.playerStateMachine.playerStateFall.isActive then
-
+    if player.isClient and player == g_localPlayer then
+        local onFootState = player.stateMachine.currentState
+        if onFootState.name ~= "onFoot" then
+            dbgPrint("Player is not on foot")
+            return
+        end
+        if onFootState.currentState == onFootState.states["walking"]
+            or onFootState.currentState == onFootState.states["falling"]
+            or onFootState.currentState == onFootState.states["jumping"]
+            or onFootState.currentState == onFootState.states["crouching"] then
+            dbgPrint("Player is moving")
             self.mainStateMachine:onPlayerMovementUpdated(true)
         else
+            dbgPrint("Player is not moving")
             self.mainStateMachine:onPlayerMovementUpdated(false)
         end
-        self.mainStateMachine:onPlayerJumpingStateUpdated(player.playerStateMachine.playerStateJump.isActive)
-        self.mainStateMachine:onPlayerFallingStateUpdated(player.playerStateMachine.playerStateFall.isActive, player.baseInformation.isOnGround)
+        self.mainStateMachine:onPlayerJumpingStateUpdated(onFootState.currentState == onFootState.states["jumping"])
+        self.mainStateMachine:onPlayerFallingStateUpdated(onFootState.currentState == onFootState.states["falling"], player.graphicsState.isGrounded)
     -- else: Server and other clients won't know the state machine state.
     end
 end

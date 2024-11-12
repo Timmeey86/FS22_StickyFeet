@@ -76,17 +76,17 @@ function StickyFeetStateMachine:reset()
     self.previouslyPrintedState = 0
 end
 
----Call this when the isEntered state of the player might have changed
----@param isEntered boolean @True if the player is entered, i.e. active as a character in the game and not inside a vehicle
-function StickyFeetStateMachine:onPlayerIsEnteredStateUpdated(isEntered)
-    if not isEntered then
-        -- if the player is not entered, all the internal flags are invalid and must be updated as soon as they are entered again
+---Call this when the isInVehicle state of the player might have changed
+---@param isInVehicle boolean @True if the player is in a vehicle
+function StickyFeetStateMachine:onPlayerIsInVehicleStateUpdated(isInVehicle)
+    if isInVehicle then
+        -- if the player is in a vehicle, all the internal flags are invalid and must be updated as soon as they are entered again
         self:reset()
     elseif self.state == StickyFeetStateMachine.STATES.NO_PLAYER then
         self:setState(StickyFeetStateMachine.STATES.NO_VEHICLE)
     -- else: Stay in current state
     end
-    self:printState("player.isEntered == " .. tostring(isEntered))
+    self:printState("isInVehicle == " .. tostring(isInVehicle))
 end
 
 ---Call this after finding out whether or not there is a vehicle below the player

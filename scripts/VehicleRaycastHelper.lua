@@ -20,12 +20,13 @@ end
 ---@return table @The topmost vehicle which was matched, or nil
 ---@return table @The topmost bale which was matched, or nil
 function VehicleRaycastHelper:getVehicleBelowPlayer(player, x,y,z)
+
     -- Calculate four locations around the player based on the given position and the player's capsule radius
-    local radius = player.model.capsuleRadius
+    local radius = player.capsuleController.radius
 
     -- Get a vector in the player's X and Z direction, but in world coordinates. We don't get a unit vector here, but one which is exactly as long as radius
-    local xx,xy,xz = localDirectionToWorld(player.graphicsRootNode, radius,0,0)
-    local zx,zy,zz = localDirectionToWorld(player.graphicsRootNode, 0,0,radius)
+    local xx,xy,xz = localDirectionToWorld(player.capsuleController.rootNode, radius,0,0)
+    local zx,zy,zz = localDirectionToWorld(player.capsuleController.rootNode, 0,0,radius)
 
     -- Calculate four points in front of, behind, left and right of the player
     local coords = {
@@ -36,7 +37,7 @@ function VehicleRaycastHelper:getVehicleBelowPlayer(player, x,y,z)
         right = { x = x + zx, y = y + zy, z = z + zz }
     }
     if self.debugVehicleDetection then
-        local yx,yy,yz = localDirectionToWorld(player.graphicsRootNode, 0,radius,0)
+        local yx,yy,yz = localDirectionToWorld(player.capsuleController.rootNode, 0,radius,0)
         DebugUtil.drawDebugGizmoAtWorldPos(coords["center"].x, coords["center"].y, coords["center"].z, zx,zy,zz, yx,yy,yz, "Center", false, {1,1,1})
         DebugUtil.drawDebugGizmoAtWorldPos(coords["back"].x, coords["back"].y, coords["back"].z, zx,zy,zz, yx,yy,yz, "Back", false, {1,1,1})
         DebugUtil.drawDebugGizmoAtWorldPos(coords["front"].x, coords["front"].y, coords["front"].z, zx,zy,zz, yx,yy,yz, "Front", false, {1,1,1})
@@ -56,7 +57,7 @@ function VehicleRaycastHelper:getVehicleBelowPlayer(player, x,y,z)
         if self.debugVehicleDetection then
             dbgPrint(("Looking for vehicle on %s side of %.3f/%.3f/%.3f"):format(side, x,y,z))
         end
-        raycastAll(location.x, location.y + topBuffer, location.z, 0, -1, 0, "vehicleRaycastCallback", maxDistance, self, collisionMask)
+        raycastAll(location.x, location.y + topBuffer, location.z, 0, -1, 0, maxDistance, "vehicleRaycastCallback", self, collisionMask)
     end
 
     -- replace any found X/Z coordinates by the original player location and use Y of the topmost vehicle match
@@ -72,6 +73,7 @@ function VehicleRaycastHelper:getVehicleBelowPlayer(player, x,y,z)
     return self.bottommostVehicleMatch, self.lastObjectMatch
 end
 
+local first = true
 ---This is called by the game engine when an object which matches the VEHICLE collision mask was found below the player
 ---@param potentialVehicleId number @The ID of the object which was found
 ---@param x number @The world X coordinate of the match location
@@ -86,21 +88,26 @@ end
 ---@param isLast boolean @True if this is the last match
 ---@return boolean @False if the search should be stopped, true if it should be continued
 function VehicleRaycastHelper:vehicleRaycastCallback(potentialVehicleId, x, y, z, distance, nx,ny,nz, subShapeIndex, shapeId, isLast)
+    if first then
+        DebugUtil.printTableRecursively(CollisionMask, "cm ", 0, 1)
+        DebugUtil.printTableRecursively(CollisionFlag, "cf ", 0, 1)
+        first = false
+    end
     if potentialVehicleId ~= nil and potentialVehicleId ~= 0 then
         local object = g_currentMission:getNodeObject(potentialVehicleId)
-        if object ~= nil and object:isa(Vehicle) and CollisionFlag.getHasFlagSet(shapeId, CollisionFlag.VEHICLE) then
+        if object ~= nil and object:isa(Vehicle) and CollisionFlag.getHasGroupFlagSet(shapeId, CollisionFlag.VEHICLE) then
             -- Update the vehicle match only if this is the topmost match so far
             if self.topmostVehicleMatch == nil or y > self.topmostVehicleMatch.y then
                 self.topmostVehicleMatch = { object = object, x = x, y = y, z = z, distance = distance }
                 if self.debugVehicleDetection then
-                    print(("%s: Found new topmost vehicle with ID %d at %.3f/%.3f/%.3f, %.3fm below player location"):format(MOD_NAME, object.id, x, y, z, distance - g_currentMission.player.model.capsuleTotalHeight/2 - 4 ))
+                    print(("%s: Found new topmost vehicle with ID %d at %.3f/%.3f/%.3f, %.3fm below player location"):format(MOD_NAME, object.id, x, y, z, distance - g_localPlayer.capsuleController.height/2 - 4 ))
                 end
                 -- Continue searching anyway in order to find the bottommost vehicle, too
             end
             if self.bottommostVehicleMatch == nil or y < self.bottommostVehicleMatch.y then
                 self.bottommostVehicleMatch = { object = object, x = x, y = y, z = z, distance = distance }
                 if self.debugVehicleDetection then
-                    print(("%s: Found new bottommost vehicle with ID %d at %.3f/%.3f/%.3f, %.3fm below player location"):format(MOD_NAME, object.id, x, y, z, distance - g_currentMission.player.model.capsuleTotalHeight/2 - 4 ))
+                    print(("%s: Found new bottommost vehicle with ID %d at %.3f/%.3f/%.3f, %.3fm below player location"):format(MOD_NAME, object.id, x, y, z, distance - g_localPlayer.capsuleController.height/2 - 4 ))
                 end
             end
         elseif object ~= nil and (object:isa(Bale)) and (self.lastObjectMatch == nil or y > self.lastObjectMatch.y) then
