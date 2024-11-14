@@ -73,7 +73,6 @@ function VehicleRaycastHelper:getVehicleBelowPlayer(player, x,y,z)
     return self.bottommostVehicleMatch, self.lastObjectMatch
 end
 
-local first = true
 ---This is called by the game engine when an object which matches the VEHICLE collision mask was found below the player
 ---@param potentialVehicleId number @The ID of the object which was found
 ---@param x number @The world X coordinate of the match location
@@ -88,11 +87,6 @@ local first = true
 ---@param isLast boolean @True if this is the last match
 ---@return boolean @False if the search should be stopped, true if it should be continued
 function VehicleRaycastHelper:vehicleRaycastCallback(potentialVehicleId, x, y, z, distance, nx,ny,nz, subShapeIndex, shapeId, isLast)
-    if first then
-        DebugUtil.printTableRecursively(CollisionMask, "cm ", 0, 1)
-        DebugUtil.printTableRecursively(CollisionFlag, "cf ", 0, 1)
-        first = false
-    end
     if potentialVehicleId ~= nil and potentialVehicleId ~= 0 then
         local object = g_currentMission:getNodeObject(potentialVehicleId)
         if object ~= nil and object:isa(Vehicle) and CollisionFlag.getHasGroupFlagSet(shapeId, CollisionFlag.VEHICLE) then

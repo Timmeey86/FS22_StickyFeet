@@ -57,11 +57,7 @@ end
 ---@param y number @The Y coordinate of the target graphics root node position
 ---@param z number @The Z coordinate of the target graphics root node position
 function PlayerVehicleTracker.applyMove(player, x, y, z)
-    setTranslation(player.capsuleController.rootNode, x, y, z)
-    --player:moveToAbsoluteInternal(x, y + player.capsuleController.height * 0.5, z)
-    -- Graphics root node should always be below the player, but moveToAbsoluteInternal moves it to the same point
-    -- TODO
-    --setTranslation(player:getCurrentRootNode(), x, y, z)
+    setTranslation(player.capsuleController.rootNode, x, y + player.capsuleController.height * 0.5, z)
 end
 
 ---Sends an event to the server, or broadcasts it when hosting a multiplayer game
@@ -141,7 +137,6 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
     if not player.isClient or player ~= g_localPlayer then return end
 
     -- Check if the player is active in the game or sitting in a vehicle (or other reasons not to be "entered")
-    -- TODO: State machine could probably be connected to player:onEnterVehicle, onEnterVehicleAsPassenger etc
     local isInVehicle = player:getIsInVehicle()
     self.mainStateMachine:onPlayerIsInVehicleStateUpdated(isInVehicle)
     -- The player can't be on a vehicle if they're in a vehicle => skip the remaining code
@@ -207,8 +202,12 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
             local newRotation = MathUtil.getYRotationFromDirection(dirX, dirZ)
             if vehicle.previousRotation ~= nil then
                 local rotationDiff = newRotation - vehicle.previousRotation
-                -- TODO - Player doesn't have a rotation any more, just `player.graphicsState.rotationVelocity`
-                --player:setRotation(player.rotX, player.rotY + rotationDiff)
+                -- Rotate the player model
+                player.mover.movementDirectionYaw = player.mover.movementDirectionYaw + rotationDiff
+                -- Rotate the first/third person camera (looks like that's the same node)
+                local yawNode = player.camera.yawNode
+                local rotationX, rotationY, rotationZ = getRotation(yawNode)
+                setRotation(yawNode, rotationX, rotationY + rotationDiff, rotationZ)
             end
             vehicle.previousRotation = newRotation
         end
