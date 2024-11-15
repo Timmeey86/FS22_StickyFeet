@@ -17,6 +17,9 @@ function dbgPrint(text)
     end
 end
 
+-- Remove the PLAYER bit from the AI collision mask so field workers don't stop working when the player is near the vehicle
+AICollisionTriggerHandler.COLLISION_MASK = bitAND(AICollisionTriggerHandler.COLLISION_MASK, bitNOT(CollisionFlag.PLAYER))
+
 -- Delay method registration as otherwise mods which override but don't call superFunc would break our mod
 -- If you use this approach in your own mod, please don't override anything without calling superFunc
 Mission00.loadMission00Finished = Utils.appendedFunction(Mission00.loadMission00Finished, function(...)

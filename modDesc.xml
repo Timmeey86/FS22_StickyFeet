@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <modDesc descVersion="92">
     <author>Farmsim Tim (timmeey86)</author>
-    <version>1.0.0.0</version>
+    <version>0.1.0.0</version>
     <title>
         <en>Sticky Feet</en>
         <de>Klebrige Füße</de>
@@ -27,6 +27,7 @@ The following features currently work:
 There are limitations, however:
 - Picking up and dropping objects will not work properly at high speeds.
 - Players sometimes bounce up and down when standing close to the borders of a pallet on a moving vehicle
+- Players currently block AI helpers on roads if the player is anywhere near the cab
 
 If you find any issues not listed here, please report them at https://github.com/Timmeey86/FS22_StickyFeet
 
@@ -50,6 +51,7 @@ Die folgenden Dinge funktionieren momentan:
 Es gibt allerdings Einschränkungen:
 - Das aufheben und fallen lassen von Objekten funktioniert bei hohen Geschwindigkeiten nicht richtig
 - Spieler zappeln manchmal hoch und runter wenn sie am Rand einer Palette auf einem Fahrzeug stehen, das sich bewegt
+- Der Spieler blockiert momentan KI Helfer auf den Straßen, wenn sich der Spieler in der Nähe des Zugfahrzeugs befindet
 
 Falls ihr Probleme entdeckt, die hier nicht gelistet sind, erstellt bitte ein Ticket auf https://github.com/Timmeey86/FS22_StickyFeet
 

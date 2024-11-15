@@ -99,10 +99,10 @@ function PlayerVehicleTracker:forceMovePlayer(player, x, y, z)
     if self.mainStateMachine.trackedVehicle ~= nil then
         -- Player is in a state which has a vehicle
         local xl, yl, zl = worldToLocal(self.mainStateMachine.trackedVehicle.rootNode, x, y, z)
-        event = PlayerMovementCorrectionEvent.fromVehicleCoords(player, self.mainStateMachine.trackedVehicle, { x = xl, y = yl, z = zl }, player.lastEstimatedForwardVelocity)
+        event = PlayerMovementCorrectionEvent.fromVehicleCoords(player, self.mainStateMachine.trackedVehicle, { x = xl, y = yl, z = zl }, player.mover.currentSpeed)
     else
         -- Player is not tracking a vehicle, but the position is being corrected anyway (maybe jumping off, or similar)
-        event = PlayerMovementCorrectionEvent.fromGlobalCoords(player, { x = x, y = y, z = z }, player.lastEstimatedForwardVelocity)
+        event = PlayerMovementCorrectionEvent.fromGlobalCoords(player, { x = x, y = y, z = z }, player.mover.currentSpeed)
     end
     PlayerVehicleTracker.sendOrBroadcastEvent(player, event)
 end
@@ -215,16 +215,13 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
         -- If the vehicle is moving and the player is either moving, jumping up or falling down above a moving vehicle
         if self.mainStateMachine:playerIsMovingAboveMovingVehicle() then
             dbgPrint("Player is moving above vehicle - adding player vector to target coordinates")
-            -- Calculate the desired player movement
-            -- TODO: There is now only player.graphicsState.absSpeed and player.moveer.currentSpeed etc. Find out how that works
-            --[[local desiredSpeed = player:getDesiredSpeed()
-            local dtInSeconds = dt * 0.001
-            local desiredSpeedX = player.motionInformation.currentWorldDirX * desiredSpeed * dtInSeconds
-            local desiredSpeedZ = player.motionInformation.currentWorldDirZ * desiredSpeed * dtInSeconds
-            dbgPrint(("Desired speed is %.3f, dt is %.3fs, X/Y speed is %.3f/%.3f"):format(desiredSpeed, dtInSeconds, desiredSpeedX, desiredSpeedZ))
             -- Calculate the target world coordinates
-            targetX = targetX + desiredSpeedX
-            targetZ = targetZ + desiredSpeedZ
+            local deltaX = player.mover.positionDeltaX
+            local deltaY = player.mover.positionDeltaY
+            local deltaZ = player.mover.positionDeltaZ
+            targetX = targetX + deltaX
+            targetY = targetY + deltaY
+            targetZ = targetZ + deltaZ
             dbgPrint(("New target coordinates are %.3f/%.3f/%.3f based on vehicle ID %d"):format(targetX, targetY, targetZ, vehicle.id))
             -- Find the vehicle at those coordinates to check wether or not the location is still on the vehicle
             dbgPrint("Updating tracked vehicle in :checkForVehicleBelow ('player is moving' case)")
@@ -241,6 +238,7 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
                 dbgPrint(("Final target coordinates are %.3f/%.3f/%.3f based on vehicle ID %d"):format(targetX, targetY, targetZ, vehicle.id))
                 -- Adjust for jumping or falling
                 if state == StickyFeetStateMachine.STATES.JUMPING_ABOVE_VEHICLE or state == StickyFeetStateMachine.STATES.FALLING_ABOVE_VEHICLE then
+                    --[[TODO Jumping needs to be fixed
                     local _, graphicsY, _ = localToWorld(player.capsuleController.rootNode, 0, 0, 0)
                     local adjustedYCoordinate = graphicsY + player.motionInformation.currentSpeedY * dtInSeconds
                     if adjustedYCoordinate > targetY then
@@ -253,6 +251,7 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
                         player.playerStateMachine.playerStateFall:deactivate()
                         player.networkInformation.interpolatorOnGround:setValue(1.0)
                     end
+                    ]]
                 end
             else
                 dbgPrint("Target location is no longer above vehicle")
@@ -263,9 +262,9 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
             end
             dbgPrint("Moving player to target location")
             -- Apply an appropriate movement velocity relative to the vehicle
-            self:overrideAnimationVelocity(player, MathUtil.vector2Length(desiredSpeedX, desiredSpeedZ) / dtInSeconds)
+            -- TODO
+            --self:overrideAnimationVelocity(player, MathUtil.vector2Length(desiredSpeedX, desiredSpeedZ) / dtInSeconds)
             self:forceMovePlayer(player, targetX, targetY, targetZ)
-            ]]--
         end
     end
 
