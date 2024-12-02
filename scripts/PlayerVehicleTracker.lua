@@ -57,7 +57,7 @@ end
 ---@param y number @The Y coordinate of the target graphics root node position
 ---@param z number @The Z coordinate of the target graphics root node position
 function PlayerVehicleTracker.applyMove(player, x, y, z)
-	player.mover:setPosition(targetX, targetY, targetZ, false)
+	player.mover:setPosition(x, y, z, false)
 end
 
 ---Sends an event to the server, or broadcasts it when hosting a multiplayer game
