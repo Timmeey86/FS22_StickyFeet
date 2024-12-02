@@ -3,7 +3,7 @@ MOD_NAME = g_currentModName or "unknown"
 
 StickyFeet = {}
 
-local debugStateMachineSwitch = true
+local debugStateMachineSwitch = false
 local debugSwitch = false
 local debugVehicleDetection = false
 local mainStateMachine = StickyFeetStateMachine.new(debugStateMachineSwitch)
@@ -12,9 +12,9 @@ local playerVehicleTracker = PlayerVehicleTracker.new(mainStateMachine, vehicleR
 local vehicleMovementTracker = VehicleMovementTracker.new(mainStateMachine)
 local playerMovementStateMachine = PlayerMovementStateMachine.new(mainStateMachine)
 function dbgPrint(text)
-    if debugSwitch then
-        print(("%s [%.4f]: %s"):format(MOD_NAME, g_currentMission.environment.dayTime / 1000, text))
-    end
+	if debugSwitch then
+		print(("%s [%.4f]: %s"):format(MOD_NAME, g_currentMission.environment.dayTime / 1000, text))
+	end
 end
 
 -- Remove the PLAYER bit from the AI collision mask so field workers don't stop working when the player is near the vehicle
@@ -24,26 +24,26 @@ AICollisionTriggerHandler.COLLISION_MASK = bitAND(AICollisionTriggerHandler.COLL
 -- If you use this approach in your own mod, please don't override anything without calling superFunc
 Mission00.loadMission00Finished = Utils.appendedFunction(Mission00.loadMission00Finished, function(...)
 
-    -- Track player movement and vehicle below player
-    Player.update = Utils.appendedFunction(Player.update, function(player, dt)
-        playerMovementStateMachine:checkMovementState(player)
-        playerVehicleTracker:checkForVehicleBelow(player, dt)
-    end)
-    Player.updateAnimationParameters = Utils.prependedFunction(Player.updateAnimationParameters, function(player, dt)
-        playerVehicleTracker:adjustAnimationParameters(player, dt)
-    end)
+	-- Track player movement and vehicle below player
+	Player.update = Utils.appendedFunction(Player.update, function(player, dt)
+		playerMovementStateMachine:checkMovementState(player)
+		playerVehicleTracker:checkForVehicleBelow(player, dt)
+	end)
+	Player.updateAnimationParameters = Utils.prependedFunction(Player.updateAnimationParameters, function(player, dt)
+		playerVehicleTracker:adjustAnimationParameters(player, dt)
+	end)
 
-    -- Track vehicle movement
-    Vehicle.update = Utils.appendedFunction(Vehicle.update, function(vehicle, ...)
-        vehicleMovementTracker:checkVehicle(vehicle)
-    end)
+	-- Track vehicle movement
+	Vehicle.update = Utils.appendedFunction(Vehicle.update, function(vehicle, ...)
+		vehicleMovementTracker:checkVehicle(vehicle)
+	end)
 
-    if debugVehicleDetection then
-        -- Draw vehicle root nodes to help understand debugging output bettter
-        BaseMission.draw = Utils.appendedFunction(BaseMission.draw, function(baseMission)
-            for _, vehicle in pairs(baseMission.vehicleSystem.vehicles) do
-                DebugUtil.drawDebugNode(vehicle.rootNode, tostring(vehicle.id), false)
-            end
-        end)
-    end
+	if debugVehicleDetection then
+		-- Draw vehicle root nodes to help understand debugging output bettter
+		BaseMission.draw = Utils.appendedFunction(BaseMission.draw, function(baseMission)
+			for _, vehicle in pairs(baseMission.vehicleSystem.vehicles) do
+				DebugUtil.drawDebugNode(vehicle.rootNode, tostring(vehicle.id), false)
+			end
+		end)
+	end
 end)
