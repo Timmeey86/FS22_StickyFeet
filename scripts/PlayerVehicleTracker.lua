@@ -57,7 +57,7 @@ end
 ---@param y number @The Y coordinate of the target graphics root node position
 ---@param z number @The Z coordinate of the target graphics root node position
 function PlayerVehicleTracker.applyMove(player, x, y, z)
-	setTranslation(player.capsuleController.rootNode, x, y + player.capsuleController.height * 0.5, z)
+	player.mover:setPosition(targetX, targetY, targetZ, false)
 end
 
 ---Sends an event to the server, or broadcasts it when hosting a multiplayer game
@@ -238,9 +238,9 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
 				dbgPrint(("Final target coordinates are %.3f/%.3f/%.3f based on vehicle ID %d"):format(targetX, targetY, targetZ, vehicle.id))
 				-- Adjust for jumping or falling
 				if state == StickyFeetStateMachine.STATES.JUMPING_ABOVE_VEHICLE or state == StickyFeetStateMachine.STATES.FALLING_ABOVE_VEHICLE then
-					local _, graphicsY, _ = localToWorld(player.capsuleController.rootNode, 0, 0, 0)
-					local adjustedYCoordinate = graphicsY - player.capsuleController.height * 0.5 + player.mover.currentVelocityY * dt * 0.001
+					local adjustedYCoordinate = targetY + player.mover.currentVelocityY * dt * 0.001
 					if adjustedYCoordinate > targetY then
+						-- TODO Only seems to work for a single frame, then the upwards speed gets cancelled
 						targetY = adjustedYCoordinate
 					elseif state == StickyFeetStateMachine.STATES.FALLING_ABOVE_VEHICLE then
 						-- the player is still considered falling, but they landed on the trailer or something else 

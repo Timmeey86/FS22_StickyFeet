@@ -205,8 +205,9 @@ function StickyFeetStateMachine:onPlayerJumpingStateUpdated(isJumping)
 		-- Note: Transition from NO_VEHICLE to JUMPING_ONTO_VEHICLE is handled by onVehicleBelowPlayerUpdated
 
 		if self.state == StickyFeetStateMachine.STATES.VEHICLE_MOVING or self.state == StickyFeetStateMachine.STATES.BOTH_MOVING then
-			self:setState(StickyFeetStateMachine.STATES.JUMPING_ABOVE_VEHICLE)
-			self:printState("player is jumping above moving vehicle")
+			-- TODO: Jumping is currently not supported
+			--self:setState(StickyFeetStateMachine.STATES.JUMPING_ABOVE_VEHICLE)
+			--self:printState("player is jumping above moving vehicle")
 		end
 	end
 	self.playerIsJumping = isJumping
