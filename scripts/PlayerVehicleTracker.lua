@@ -194,7 +194,6 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
 
 		if (state == StickyFeetStateMachine.STATES.VEHICLE_MOVING and player.trackedVehicleCoords ~= nil) then
 			dbgPrint("Moving player to target location")
-			self:overrideAnimationVelocity(player, 0) -- Stop movement animation since the player is stationary relative to the vehicle
 			self:forceMovePlayer(player, targetX, targetY, targetZ)
 
 			-- Rotate the player around the Y axis by the same amount the vehicle has rotated
@@ -257,8 +256,6 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
 			end
 			dbgPrint("Moving player to target location")
 			-- Apply an appropriate movement velocity relative to the vehicle
-			-- TODO
-			--self:overrideAnimationVelocity(player, MathUtil.vector2Length(desiredSpeedX, desiredSpeedZ) / dtInSeconds)
 			self:forceMovePlayer(player, targetX, targetY, targetZ)
 		end
 	end
@@ -272,23 +269,14 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
 end
 
 ---Overrides the animation velocity especially for other players in order to prevent them from looking as if they were running on the spot
----@param player table @The player
----@param dt number @The time delta (unused)
-function PlayerVehicleTracker:adjustAnimationParameters(player, dt)
+---@param graphicsState PlayerGraphicsState @The graphics state to be changed
+---@param player Player @The affected player
+function PlayerVehicleTracker:adjustAnimationParameters(graphicsState, player)
 	if player.syncedForwardVelocity ~= nil then
-		-- Other players: Override the estimated forward velocity to e.g. stop them from having a running animation while they are stationary on a moving trailer
-		self:overrideAnimationVelocity(player, player.syncedForwardVelocity)
+		-- TODO: Remote players are still lagging behind
+		player.lastEstimatedForwardVelocity = syncedForwardVelocity
+		graphicsState.relativeVelocityX = 0
+		graphicsState.relativeVelocityZ = 0
+		graphicsState.absSpeed = 0
 	end
-end
-
----Overrides the animation velocity with the given value.
----@param player table @The player to be affected
----@param velocity number @The velocity to be applied to the animation
-function PlayerVehicleTracker:overrideAnimationVelocity(player, velocity)
-	-- TODO: Probably need velocity X, Y and Z
-	-- player.graphicsComponent.animationParameters.relativeVelocityX/Y/Z, movementDirX/Y/Z
-	player.lastEstimatedForwardVelocity = velocity
-	--local params = player.model.animationInformation.parameters
-	--params.forwardVelocity.value = velocity
-	--params.absForwardVelocity.value = velocity
 end

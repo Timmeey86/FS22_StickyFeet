@@ -52,7 +52,7 @@ end
 ---Reads an event from the network. This can happen in two cases:
 ---1) This is executed on the server, and a client sent the event
 ---2) This is executed on the client, and the server forwarded a client event to all other clients
----@param streamId table @The ID of the network stream
+---@param streamId number @The ID of the network stream
 ---@param connection table @Details about the network connection
 function PlayerMovementCorrectionEvent:readStream(streamId, connection)
 	self.player = NetworkUtil.readNodeObject(streamId)
@@ -77,7 +77,7 @@ end
 ---Sends event data to other network participants. This can happen in two cases:
 ---1) This is executed on the client which initially sends the event
 ---2) This is executed on the server which broadcasts a copy of the event to all other clients
----@param streamId table @The ID of the network stream
+---@param streamId number @The ID of the network stream
 function PlayerMovementCorrectionEvent:writeStream(streamId, _)
 	NetworkUtil.writeNodeObject(streamId, self.player)
 	streamWriteBool(streamId, self.isGlobalCoords)

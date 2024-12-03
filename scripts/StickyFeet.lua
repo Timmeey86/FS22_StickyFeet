@@ -36,8 +36,8 @@ Mission00.loadMission00Finished = Utils.appendedFunction(Mission00.loadMission00
 		playerMovementStateMachine:checkMovementState(player)
 		playerVehicleTracker:checkForVehicleBelow(player, dt)
 	end)
-	Player.updateAnimationParameters = Utils.prependedFunction(Player.updateAnimationParameters, function(player, dt)
-		playerVehicleTracker:adjustAnimationParameters(player, dt)
+	PlayerGraphicsState.updateRemote = Utils.prependedFunction(PlayerGraphicsState.updateRemote, function(graphicsState, player)
+		playerVehicleTracker:adjustAnimationParameters(graphicsState, player)
 	end)
 
 	-- Track vehicle movement

@@ -1,65 +1,34 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
-<modDesc descVersion="92">
+<modDesc descVersion="93">
 	<author>Farmsim Tim (timmeey86)</author>
-	<version>0.1.0.1</version>
+	<version>0.5.0.0</version>
 	<title>
 		<en>Sticky Feet</en>
 		<de>Klebrige Füße</de>
 	</title>
 	
 	<description>
-		<en><![CDATA[This mod makes your feet stick to moving vehicles/trailers/implements so you no longer slide off while they are being driven by the AI or another player.
+		<en><![CDATA[Description: If you stand on a vehicle which is driving, this mod will make your feet stick to it, so you don't slide off.
 
-The possibilities which are opened up by this still need to fully be explored, but some are:
-- Carrying your friends to the workplace in the back of a pickup truck or a trailer
-- Slowly driving across a field with small bales with a second player bringing them to the trailer and a third stacking them
-- Streamers can film from angles which are otherwise impossible (while the AI is working the field)
-- Stacking bales on a trailer in single player while letting the AI drive and using a baler which lifts bales up to the trailer
+This is an early release for single player only. It fully works apart from jumping while moving with the vehicle.
+Streamers can use it for unique camera angles (in first person) and players can already have some fun while the AI is driving.
 
-The following features currently work:
-- Sticking to a moving trailer when the player is not moving
-- Walking around on a moving trailer (same speed in every direction)
-- Auto-rotating with the vehicle as it's turning (in first person view)
-- Jumping while on a moving trailer (you'll move as fast as the vehicle)
-- Jumping onto and off a trailer (your movement speed will not be affected by the vehicle, though)
-- Jumping between vehicles
+Note that with this mod active, the player will no longer be considered an obstacle by the AI, so AI helpers will just pick you up and carry you along if you are in their way.
 
-There are limitations, however:
-- Picking up and dropping objects will not work properly at high speeds.
-- Players sometimes bounce up and down when standing close to the borders of a pallet on a moving vehicle
-- Players currently block AI helpers on roads if the player is anywhere near the cab
+GitHub-Link: https://github.com/Timmeey86/FS25_StickyFeet
+]]></en>
+<de><![CDATA[Beschreibung: Wenn du auf einem Fahrzeug stehst, das sich bewegt, sorgt diese Mod dafür, dass deine Füße festkleben und du nicht herunter rutschst.
 
-If you find any issues not listed here, please report them at https://github.com/Timmeey86/FS22_StickyFeet
+Dies ist eine Vorabversion nur für den Karrieremodus, bei der alles funktioniert abgesehen vom Hüpfen, während man sich mit dem Fahrzeug mitbewegt.
+Streamer können sie verwenden, um einzigartige Kameraperspektiven zu erzielen (aus der Egoperspektive) und Spieler können bereits etwas Spaß haben, während die KI fährt.
 
-Big thanks to Loki_79 for sharing his experience and helping in testing this mod]]></en>
-<de><![CDATA[Diese Mod sorgt dafür, dass eure Füße an sich bewegenden Fahrzeugen/Anhängern/Geräten kleben bleiben, sodass ihr nicht herunter rutscht, während diese von der KI oder von anderen Spielern gefahren werden.
+Beachte dass mit dieser Mod der Spieler nicht mehr als Hindernis für die KI betrachtet wird. Dadurch werden dich KI Helfer einfach aufheben und mitnehmen, wenn du ihnen im Weg stehst.
 
-Die Möglichkeiten, die das bietet, müssen noch weiter erforscht werden, aber manche davon sind:
-- Ihr könnt eure Freunde auf der Ladefläche eines Pickups oder in einem Anhänger zur Arbeit fahren
-- Ein Spieler kann langsam über ein Feld mit kleinen Ballen fahren während ein zweiter Spieler sie zum Anhänger bringt und ein dritter sie stapelt
-- Streamer können damit Kameraperspektiven erreichen, die sonst nicht möglich wären (während die KI das Feld bearbeitet)
-- Im Einzelspieler-Modus Ballen auf einem Anhänger stapeln während die AI den Schlepper fährt und eine Ballenpresse verwendet wird, die die Ballen auf den Anhänger hoch befördert
-
-Die folgenden Dinge funktionieren momentan:
-- Auf einem sich bewegenden Anhänger bleiben während der Spieler sich nicht bewegt
-- Auf einem sich bewegenden Anhänger herumlaufen (mit der gleichen Geschwindigkeit in jede Richtung)
-- Sich mit dem Gefährt drehen während es abbiegt (in der Ego-Perspektive)
-- Auf einem sich bewegenden Anhänger herum hüpfen (man bewegt sich dann so schnell wie das Gefährt)
-- Auf einen sich bewegenden Anhänger drauf und davon herunter hüpfen (die Bewegungsgeschwindigkeit wird dann nicht von dem Fahrzeug beeinflusst)
-- Von einem auf ein anderes Fahrzeug hüpfen
-
-Es gibt allerdings Einschränkungen:
-- Das aufheben und fallen lassen von Objekten funktioniert bei hohen Geschwindigkeiten nicht richtig
-- Spieler zappeln manchmal hoch und runter wenn sie am Rand einer Palette auf einem Fahrzeug stehen, das sich bewegt
-- Der Spieler blockiert momentan KI Helfer auf den Straßen, wenn sich der Spieler in der Nähe des Zugfahrzeugs befindet
-
-Falls ihr Probleme entdeckt, die hier nicht gelistet sind, erstellt bitte ein Ticket auf https://github.com/Timmeey86/FS22_StickyFeet
-
-Dank geht an Loki_79 für das Teilen seines Wissens und die Hilfe beim Testen der Mod]]>
-</de>
+GitHub-Link: https://github.com/Timmeey86/FS25_StickyFeet
+]]></de>
 	</description>
 	
-	<multiplayer supported="true" />
+	<multiplayer supported="false" />
 
 	<iconFilename>icon_StickyFeet.dds</iconFilename>
 
