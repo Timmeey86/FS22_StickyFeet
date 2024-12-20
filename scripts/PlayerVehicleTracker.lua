@@ -1,13 +1,18 @@
----@class PlayerVehicleTracker
 ---This class keeps track of which player is above which vehicle
-
+---@class PlayerVehicleTracker
+---@field mainStateMachine StickyFeetStateMachine @The state machine of this mod
+---@field vehicleRaycastHelper VehicleRaycastHelper @A helper class for finding vehicles below players
+---@field debugVehicleDetection boolean @True if additional logging shall be turned on in case of vehicle detection
+---@field lastVehicleMatch table|nil @The last vehicle which was found
+---@field lastObjectMatch table|nil @The last object which was found
 PlayerVehicleTracker = {}
 local PlayerVehicleTracker_mt = Class(PlayerVehicleTracker)
 
 ---Creates a new object which keeps track of which player is above which vehicle
----@param mainStateMachine table @The main state machine of the mod
+---@param mainStateMachine StickyFeetStateMachine @The main state machine of the mod
+---@param vehicleRaycastHelper VehicleRaycastHelper @A helper class for finding vehicles below players
 ---@param debugVehicleDetection boolean @True if additional logging shall be turned on in case of vehicle detection
----@return table @The new instance
+---@return PlayerVehicleTracker @The new instance
 function PlayerVehicleTracker.new(mainStateMachine, vehicleRaycastHelper, debugVehicleDetection)
 	local self = setmetatable({}, PlayerVehicleTracker_mt)
 	self.mainStateMachine = mainStateMachine
@@ -184,11 +189,11 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
 		self:updateTrackedLocation(player)
 	end
 
-	if player.trackedVehicleCoords ~= nil
+	local vehicle = self.mainStateMachine.trackedVehicle
+	if player.trackedVehicleCoords ~= nil and vehicle ~= nil
 		and state ~= StickyFeetStateMachine.STATES.JUMPING_FROM_MOVING_VEHICLE
 		and state ~= StickyFeetStateMachine.STATES.JUMPING_ONTO_VEHICLE then
 
-		local vehicle = self.mainStateMachine.trackedVehicle
 		local targetX,targetY,targetZ = localToWorld(vehicle.rootNode, player.trackedVehicleCoords.x, player.trackedVehicleCoords.y, player.trackedVehicleCoords.z)
 		dbgPrint(("Current target coordinates are %.3f/%.3f/%.3f based on vehicle ID %d"):format(targetX, targetY, targetZ, vehicle.id))
 
@@ -228,7 +233,7 @@ function PlayerVehicleTracker:checkForVehicleBelow(player, dt)
 			state = self.mainStateMachine.state
 			vehicle = self.mainStateMachine.trackedVehicle
 			-- Note: if that location is no longer above a vehicle, the state machine will be in a NO_VEHICLE state now
-			if self.mainStateMachine:playerIsMovingAboveMovingVehicle() then
+			if self.mainStateMachine:playerIsMovingAboveMovingVehicle() and vehicle ~= nil then
 				dbgPrint("Target location is still above vehicle. Updating tracked vehicle coordinates")
 				-- Remember the new tracked location
 				self:updateTrackedLocation(player)

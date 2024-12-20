@@ -1,12 +1,12 @@
----@class VehicleMovementTracker
 ---This class tracks the movement of any vehicle on the map
-
+---@class VehicleMovementTracker
+---@field mainStateMachine StickyFeetStateMachine @The state machine of this mod
 VehicleMovementTracker = {}
 local VehicleMovementTracker_mt = Class(VehicleMovementTracker)
 
 ---Creates a new tracker for vehicles
 ---@param mainStateMachine table @The main state machine of the mod
----@return table @the new instance
+---@return VehicleMovementTracker @the new instance
 function VehicleMovementTracker.new(mainStateMachine)
 	local self = setmetatable({}, VehicleMovementTracker_mt)
 	self.mainStateMachine = mainStateMachine
@@ -19,7 +19,7 @@ function VehicleMovementTracker:updateVehicleData(vehicle, directionVector)
 end
 
 ---Keeps track of the location and direction of any vehicle
----@param vehicle table @The vehicle to be potentially tracked
+---@param vehicle Vehicle @The vehicle to be potentially tracked
 function VehicleMovementTracker:checkVehicle(vehicle)
 
 	local currentPosition = {}

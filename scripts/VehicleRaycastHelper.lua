@@ -1,11 +1,12 @@
----@class VehicleRaycastHelper
 ---This class is responsible for finding the vehicle below the player
+---@class VehicleRaycastHelper
+---@field debugVehicleDetection boolean @True in order to print/render vehicle detection debgu info
 VehicleRaycastHelper = {}
 local VehicleRaycastHelper_mt = Class(VehicleRaycastHelper)
 
 ---Creates a new vehicle raycast helper
 ---@param debugVehicleDetection boolean @True if vehicle detection shall be debugged
----@return table @The new instance
+---@return VehicleRaycastHelper @The new instance
 function VehicleRaycastHelper.new(debugVehicleDetection)
 	local self = setmetatable({}, VehicleRaycastHelper_mt)
 	self.debugVehicleDetection = debugVehicleDetection

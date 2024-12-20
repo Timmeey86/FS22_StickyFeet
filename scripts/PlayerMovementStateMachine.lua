@@ -1,12 +1,12 @@
----@class PlayerMovementStateMachine
 ---This class tracks of the movement of players
-
+---@class PlayerMovementStateMachine
+---@field mainStateMachine StickyFeetStateMachine @The state machine of this mod
 PlayerMovementStateMachine = {}
 local PlayerMovementStateMachine_mt = Class(PlayerMovementStateMachine)
 
 ---Creates a new object which keeps track of the movement of players
 ---@param mainStateMachine table @The main state machine of the mod
----@return table @The new instance
+---@return PlayerMovementStateMachine @The new instance
 function PlayerMovementStateMachine.new(mainStateMachine)
 	local self = setmetatable({}, PlayerMovementStateMachine_mt)
 	self.mainStateMachine = mainStateMachine

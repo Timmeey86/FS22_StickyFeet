@@ -1,6 +1,8 @@
----@class StickyFeetStateMachine
 ---This is the main state machine of the mod
 ---The states here follow the state machine which is available as an image in the "doc" folder in the GitHub repository (not in the released zip file)
+---@class StickyFeetStateMachine
+---@field vehicleMovementStates table @Stores flags about whether or not a vehicle is moving for every vehicle
+---@field debugStateMachineSwitch boolean @True in order to print debug messages when state machine transitions happen
 StickyFeetStateMachine = {
 	STATES = {
 		NO_PLAYER = 1,
@@ -18,7 +20,7 @@ StickyFeetStateMachine = {
 local StickyFeetStateMachine_mt = Class(StickyFeetStateMachine)
 
 ---Creates a new state machine
----@return table @The new instance
+---@return StickyFeetStateMachine @The new instance
 function StickyFeetStateMachine.new(debugStateMachineSwitch)
 	local self = setmetatable({}, StickyFeetStateMachine_mt)
 	self:reset()
@@ -90,7 +92,7 @@ function StickyFeetStateMachine:onPlayerIsInVehicleStateUpdated(isInVehicle)
 end
 
 ---Call this after finding out whether or not there is a vehicle below the player
----@param trackedVehicle table @The vehicle below the player (may be nil)
+---@param trackedVehicle table|nil @The vehicle below the player (may be nil)
 function StickyFeetStateMachine:onVehicleBelowPlayerUpdated(trackedVehicle)
 	if self.trackedVehicle ~= nil and trackedVehicle == nil then
 		if not self.playerIsFalling and not self.playerIsJumping then
