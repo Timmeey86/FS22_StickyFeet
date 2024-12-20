@@ -1,14 +1,13 @@
-<?xml version="1.0" encoding="utf-8" standalone="no" ?>
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
 <modDesc descVersion="93">
-	<author>Farmsim Tim (timmeey86)</author>
-	<version>0.5.0.0</version>
-	<title>
-		<en>Sticky Feet</en>
-		<de>Klebrige Füße</de>
-	</title>
-	
-	<description>
-		<en><![CDATA[Description: If you stand on a vehicle which is driving, this mod will make your feet stick to it, so you don't slide off.
+  <author>Farmsim Tim (timmeey86)</author>
+  <version>0.5.0.3</version>
+  <title>
+    <en>Sticky Feet</en>
+    <de>Klebrige Füße</de>
+  </title>
+  <description>
+    <en><![CDATA[Description: If you stand on a vehicle which is driving, this mod will make your feet stick to it, so you don't slide off.
 
 This is an early release for single player only. It fully works apart from jumping while moving with the vehicle.
 Streamers can use it for unique camera angles (in first person) and players can already have some fun while the AI is driving.
@@ -17,7 +16,7 @@ Note that with this mod active, the player will no longer be considered an obsta
 
 GitHub-Link: https://github.com/Timmeey86/FS25_StickyFeet
 ]]></en>
-<de><![CDATA[Beschreibung: Wenn du auf einem Fahrzeug stehst, das sich bewegt, sorgt diese Mod dafür, dass deine Füße festkleben und du nicht herunter rutschst.
+    <de><![CDATA[Beschreibung: Wenn du auf einem Fahrzeug stehst, das sich bewegt, sorgt diese Mod dafür, dass deine Füße festkleben und du nicht herunter rutschst.
 
 Dies ist eine Vorabversion nur für den Karrieremodus, bei der alles funktioniert abgesehen vom Hüpfen, während man sich mit dem Fahrzeug mitbewegt.
 Streamer können sie verwenden, um einzigartige Kameraperspektiven zu erzielen (aus der Egoperspektive) und Spieler können bereits etwas Spaß haben, während die KI fährt.
@@ -26,20 +25,17 @@ Beachte dass mit dieser Mod der Spieler nicht mehr als Hindernis für die KI bet
 
 GitHub-Link: https://github.com/Timmeey86/FS25_StickyFeet
 ]]></de>
-	</description>
-	
-	<multiplayer supported="false" />
-
-	<iconFilename>icon_StickyFeet.dds</iconFilename>
-
-	<extraSourceFiles>
-		<sourceFile filename="scripts/PlayerMovementCorrectionEvent.lua" />
-		<sourceFile filename="scripts/PlayerMovementCorrectionStopEvent.lua" />
-		<sourceFile filename="scripts/StickyFeetStateMachine.lua" />
-		<sourceFile filename="scripts/VehicleRaycastHelper.lua" />
-		<sourceFile filename="scripts/PlayerVehicleTracker.lua" />
-		<sourceFile filename="scripts/VehicleMovementTracker.lua" />
-		<sourceFile filename="scripts/PlayerMovementStateMachine.lua" />
-		<sourceFile filename="scripts/StickyFeet.lua" />
-	</extraSourceFiles>
+  </description>
+  <multiplayer supported="true" />
+  <iconFilename>icon_StickyFeet.dds</iconFilename>
+  <extraSourceFiles>
+    <sourceFile filename="scripts/PlayerMovementCorrectionEvent.lua" />
+    <sourceFile filename="scripts/PlayerMovementCorrectionStopEvent.lua" />
+    <sourceFile filename="scripts/StickyFeetStateMachine.lua" />
+    <sourceFile filename="scripts/VehicleRaycastHelper.lua" />
+    <sourceFile filename="scripts/PlayerVehicleTracker.lua" />
+    <sourceFile filename="scripts/VehicleMovementTracker.lua" />
+    <sourceFile filename="scripts/PlayerMovementStateMachine.lua" />
+    <sourceFile filename="scripts/StickyFeet.lua" />
+  </extraSourceFiles>
 </modDesc>

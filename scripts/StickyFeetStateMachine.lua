@@ -276,3 +276,11 @@ function StickyFeetStateMachine:playerIsMovingAboveMovingVehicle()
 		or self.state == StickyFeetStateMachine.STATES.JUMPING_ABOVE_VEHICLE
 		or self.state == StickyFeetStateMachine.STATES.FALLING_ABOVE_VEHICLE
 end
+
+---Convenience function which checks if the player is currently being dragged by the vehicle
+---@return boolean @True if the player is above the vehicle and the vehicle is moving
+function StickyFeetStateMachine:playerIsDraggedByVehicle()
+	return self.state == StickyFeetStateMachine.STATES.VEHICLE_MOVING
+		or self.state == StickyFeetStateMachine.STATES.JUMPING_FROM_MOVING_VEHICLE
+		or self:playerIsMovingAboveMovingVehicle()
+end

@@ -62,7 +62,7 @@ end
 ---@param y number @The Y coordinate of the target graphics root node position
 ---@param z number @The Z coordinate of the target graphics root node position
 function PlayerVehicleTracker.applyMove(player, x, y, z)
-	player.mover:setPosition(x, y, z, false)
+	player.mover:setPosition(x, y, z, true)
 end
 
 ---Sends an event to the server, or broadcasts it when hosting a multiplayer game
@@ -129,6 +129,22 @@ function PlayerVehicleTracker.updateRemotePlayerModel(player)
 		player:raiseActive()
 	end
 end
+
+-- Prevent the server from sending outdated positioning data while a player is being locked.
+-- Also prevent it while the local player is being force moved by this mod.
+-- This method will only toggle a boolean flag, however
+function PlayerVehicleTracker:blockNetworkMovementIfNecessary(component, superFunc, streamId, connection, timestamp)
+	component.player.blockMover = component.player.syncedLockCoords ~= nil or (component.player == g_localPlayer and self.mainStateMachine:playerIsDraggedByVehicle())
+	superFunc(component, streamId, connection, timestamp)
+	component.player.blockMover = false
+end
+
+-- Block a player position update if necessary
+PlayerMover.setPosition = Utils.overwrittenFunction(PlayerMover.setPosition, function(mover, superFunc, ...)
+	if not mover.player.blockMover then
+		superFunc(mover, ...)
+	end
+end)
 
 ---Updates internal states based on whether or not a vehicle is below that player.
 ---@param player table @The player to be inspected
